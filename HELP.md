@@ -1,3 +1,4 @@
+```
 ▌ You can interact with Naru using four primary syntactic forms:
 ▌   - Directives (processed by Naru runtime engine)
 ▌       ex: /print 'verifying workspace configuration...'
@@ -581,3 +582,4 @@
 ▌ For source examples, type: /help --examples
 ▌ For source indexed example, type: /help -e <number>
 ▌ To safely close out active environment processing stream session: /exit
+```
