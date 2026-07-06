@@ -35,7 +35,7 @@ public class NaruWaitDirective extends AbstractDirective {
                         .with("--from").matchEntry(x -> fromFilter.set(x.stringValue()))
                         .requireAll();
                 NOptional<NaruEventFilter> f = NaruEventFilters.parse(fromFilter.get(),
-                        NStringUtils.firstNonBlankTrimmed(eventName.get(), NaruEvent.TASK_TERMINATED),
+                        NStringUtils.firstNonBlankStripped(eventName.get(), NaruEvent.TASK_TERMINATED),
                         context.task());
                 if (f.isNotPresent()) {
                     task.throwError(f.getMessage().get());

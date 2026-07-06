@@ -13,8 +13,8 @@ public class DefaultNaruToolTag implements NaruToolTag{
     public DefaultNaruToolTag(String id, String description) {
         NAssert.requireNamedNonBlank(id,"tag id");
         NAssert.requireNamedNonBlank(description,"tag description");
-        this.id = NNameFormat.LOWER_KEBAB_CASE.format(NStringUtils.trim(id));
-        this.description = NStringUtils.trim(description);
+        this.id = NNameFormat.LOWER_KEBAB_CASE.format(NStringUtils.strip(id));
+        this.description = NStringUtils.strip(description);
     }
 
     @Override

@@ -289,7 +289,7 @@ public class NaruRoutineMem implements NaruRoutine {
 ////        if (preferredPath != null) {
 ////            _write(preferredPath.mkParentDirs());
 ////        } else {
-////            String pathName = NStringUtils.firstNonBlankTrimmed(name(),"noname") + ".naru";
+////            String pathName = NStringUtils.firstNonBlankStripped(name(),"noname") + ".naru";
 ////            NPath pub = publicDir.resolve(pathName);
 ////            NPath priv = privateDir.resolve(pathName);
 ////            if (visibility() == NAruVisibility.PUBLIC) {
@@ -320,7 +320,7 @@ public class NaruRoutineMem implements NaruRoutine {
 //    private void _write(NPath pub) {
 //        StringBuilder sb = new StringBuilder();
 //        sb.append("------- ").append("\n");
-//        sb.append("uuid : ").append(NStringUtils.firstNonBlankTrimmed(uuid(), "NO_UUID")).append("\n");
+//        sb.append("uuid : ").append(NStringUtils.firstNonBlankStripped(uuid(), "NO_UUID")).append("\n");
 //        sb.append("creationInstant : ").append(creationInstant == null ? Instant.now() : creationInstant).append("\n");
 //        sb.append("modificationInstant : ").append(modificationInstant == null ? Instant.now() : modificationInstant).append("\n");
 //        sb.append("------- ").append("\n");

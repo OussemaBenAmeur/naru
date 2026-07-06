@@ -176,7 +176,7 @@ public class NaruRoutineDirective extends AbstractDirective {
             @Override
             public void execute(NaruDirectiveCallContext context, NCmdLine cmdLine) {
                 NaruTask task = context.task();
-                String a = NStringUtils.trimToNull(cmdLine.next().map(NArg::image).orNull());
+                String a = NStringUtils.stripToNull(cmdLine.next().map(NArg::image).orNull());
                 if ("self".equalsIgnoreCase(a)) {
                     a = null;
                 }

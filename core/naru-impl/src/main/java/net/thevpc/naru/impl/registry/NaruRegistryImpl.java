@@ -193,7 +193,7 @@ public class NaruRegistryImpl implements NaruRegistry {
 
     @Override
     public NaruRegistry registerModelProvider(NaruModelProvider provider) {
-        modelProviders.put(NStringUtils.trim(provider.name()).toLowerCase(), provider);
+        modelProviders.put(NStringUtils.strip(provider.name()).toLowerCase(), provider);
         return this;
     }
 
@@ -231,7 +231,7 @@ public class NaruRegistryImpl implements NaruRegistry {
 
     @Override
     public NOptional<NaruModelProvider> provider(String provider) {
-        return NOptional.ofNamed(modelProviders.get(NStringUtils.trim(provider).toLowerCase()), provider);
+        return NOptional.ofNamed(modelProviders.get(NStringUtils.strip(provider).toLowerCase()), provider);
     }
 
     @Override

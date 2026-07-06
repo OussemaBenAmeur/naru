@@ -73,7 +73,7 @@ public class NaruSessionManagerImpl implements NaruSessionManager {
         }
 
         for (NaruResourceInfo s : list) {
-            if (Objects.equals(NStringUtils.trim(s.getName()), NStringUtils.trim(uuidOrName))) {
+            if (Objects.equals(NStringUtils.strip(s.getName()), NStringUtils.strip(uuidOrName))) {
                 return s.getUuid();
             }
         }

@@ -313,7 +313,7 @@ public class NaruSessionImpl implements NaruSession, NToElement {
     @Override
     public NaruSession setName(String name) {
         ensureNotStopped();
-        this.name = NStringUtils.firstNonBlankTrimmed(name, "NO_NAME");
+        this.name = NStringUtils.firstNonBlankStripped(name, "NO_NAME");
         this.fireChanged();
         return this;
     }
@@ -400,7 +400,7 @@ public class NaruSessionImpl implements NaruSession, NToElement {
     @Override
     public void removeModelAlias(String alias) {
         ensureNotStopped();
-        alias = NStringUtils.trimToNull(alias);
+        alias = NStringUtils.stripToNull(alias);
         ((NaruAgentImpl) agent).getModelAliases().remove(alias);
         fireChanged();
     }
@@ -408,7 +408,7 @@ public class NaruSessionImpl implements NaruSession, NToElement {
     @Override
     public void addModelAlias(String alias, NaruModelConfig model) {
         ensureNotStopped();
-        alias = NStringUtils.trimToNull(alias);
+        alias = NStringUtils.stripToNull(alias);
         if (!NBlankable.isBlank(alias)) {
             if (model != null) {
                 ((NaruAgentImpl) agent).getModelAliases().put(alias, model);
@@ -452,8 +452,8 @@ public class NaruSessionImpl implements NaruSession, NToElement {
         NElement element = NElementReader.ofTson().read(path);
         ensureNotStopped();
         NObjectElement o = element.asObject().get();
-        this.uuid = NStringUtils.firstNonBlankTrimmed(o.getStringValue("uuid").orElse(null), UUID.randomUUID().toString());
-        this.name = NStringUtils.firstNonBlankTrimmed(o.getStringValue("name").orElse(null), "NO_NAME");
+        this.uuid = NStringUtils.firstNonBlankStripped(o.getStringValue("uuid").orElse(null), UUID.randomUUID().toString());
+        this.name = NStringUtils.firstNonBlankStripped(o.getStringValue("name").orElse(null), "NO_NAME");
         this.creationInstant = NUtils.firstNonNull(o.getInstantValue("creationDate").orElse(null), Instant.now());
         this.modificationInstant = NUtils.firstNonNull(o.getInstantValue("modificationDate").orElse(null), creationInstant);
         this.visibility = NAruVisibility.parse(o.getStringValue("visibility").orElse(null)).orElse(NAruVisibility.PRIVATE);
@@ -1108,7 +1108,7 @@ public class NaruSessionImpl implements NaruSession, NToElement {
 //            }
 //        }
 //        for (NaruResourceInfo s : list) {
-//            if (Objects.equals(NStringUtils.trim(s.getName()), NStringUtils.trim(uuidOrName))) {
+//            if (Objects.equals(NStringUtils.strip(s.getName()), NStringUtils.strip(uuidOrName))) {
 //                return s.getUuid();
 //            }
 //        }
@@ -1126,7 +1126,7 @@ public class NaruSessionImpl implements NaruSession, NToElement {
 
 //    @Override
 //    public NaruRoutine ensureRoutineExists(String routineName, NAruVisibility visibilityOnCreate, NaruTask naruTask) {
-//        routineName = NStringUtils.firstNonBlankTrimmed(routineName, "main");
+//        routineName = NStringUtils.firstNonBlankStripped(routineName, "main");
 //        NaruRoutine rt = routine(routineName, naruTask).orNull();
 //        if (rt != null) {
 //            return rt;

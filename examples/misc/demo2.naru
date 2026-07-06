@@ -231,7 +231,7 @@ Classify this project: "NARU" into one of: [DevTool, AI Framework, Package Manag
 # 14. LIVE FILE EDITING (Execution Mode)
 # ============================================================
 # Write a generated changelog entry
-/file write ./CHANGELOG-draft.md --content="## v0.8.9.0\n- Added /file directive with read/write/append/edit/grep/find ops\n- Added /fire event broadcasting\n- Improved /model alias management"
+/file write ./CHANGELOG-draft.md --content="## v1.0.0.0\n- Added /file directive with read/write/append/edit/grep/find ops\n- Added /fire event broadcasting\n- Improved /model alias management"
 
 # Verify it was written
 /file read ./CHANGELOG-draft.md
@@ -240,7 +240,7 @@ Classify this project: "NARU" into one of: [DevTool, AI Framework, Package Manag
 /file append ./CHANGELOG-draft.md --content="\n- Demo session completed successfully"
 
 # Dry-run an edit (preview without applying)
-/file edit ./CHANGELOG-draft.md --from=1 --to=1 --content="## v0.8.9.0 — The File Edition" --dry
+/file edit ./CHANGELOG-draft.md --from=1 --to=1 --content="## v1.0.0.0 — The File Edition" --dry
 
 # ============================================================
 # 15. DURABLE CHECKPOINT

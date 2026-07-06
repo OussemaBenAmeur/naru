@@ -77,7 +77,7 @@ public class NaruEventFilters {
     }
 
     public static NaruEventFilter eventName(String eventName) {
-        String z = NStringUtils.trimToNull(eventName);
+        String z = NStringUtils.stripToNull(eventName);
         if (z == null) {
             return ALWAYS;
         }

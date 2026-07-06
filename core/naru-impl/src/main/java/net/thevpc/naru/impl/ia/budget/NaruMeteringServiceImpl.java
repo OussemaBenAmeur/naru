@@ -53,7 +53,7 @@ public class NaruMeteringServiceImpl implements NaruMeteringService {
     }
 
     private NaruModelStatsAccumulator statsFor(NaruModelKey m, String userId, NaruSession session) {
-        NaruModelKeyAndUser k = new NaruModelKeyAndUser(m, NStringUtils.trimToNull(userId));
+        NaruModelKeyAndUser k = new NaruModelKeyAndUser(m, NStringUtils.stripToNull(userId));
         NaruModelStatsAccumulator o = statsByAndUser.get(k);
         if (o == null) {
             statsByAndUser.put(k, o = fillDefaults(new NaruModelStatsAccumulator().setModel(m).setUserId(userId), session));

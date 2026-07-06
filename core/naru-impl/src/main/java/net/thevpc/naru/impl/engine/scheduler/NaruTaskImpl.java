@@ -679,7 +679,7 @@ public class NaruTaskImpl implements NaruTask, NaruTaskSchedulerView {
     }
 
     public NaruTask removeToolTag(String toolTag) {
-        taskToolTags.remove(NNameFormat.LOWER_KEBAB_CASE.format(NStringUtils.trim(toolTag)));
+        taskToolTags.remove(NNameFormat.LOWER_KEBAB_CASE.format(NStringUtils.strip(toolTag)));
         return this;
     }
 
@@ -2016,7 +2016,7 @@ public class NaruTaskImpl implements NaruTask, NaruTaskSchedulerView {
 
     @Override
     public NaruTask subscribe(String eventType, NaruEventSubscription subscription) {
-        eventType = NStringUtils.trimToNull(eventType);
+        eventType = NStringUtils.stripToNull(eventType);
         if (eventType != null) {
             if (subscription == null) {
                 eventSubscriptions.remove(eventType);
@@ -2046,7 +2046,7 @@ public class NaruTaskImpl implements NaruTask, NaruTaskSchedulerView {
             if (NBlankable.isBlank(s)) {
                 s = f.runningRoutine();
             }
-            return NStringUtils.trimToNull(s);
+            return NStringUtils.stripToNull(s);
         }
         return null;
     }
@@ -2055,11 +2055,11 @@ public class NaruTaskImpl implements NaruTask, NaruTaskSchedulerView {
     public NOptional<NaruRoutine> useRoutine(String name) {
         NaruTaskFrame f = frame();
         if (f != null) {
-            f.editRoutine(NStringUtils.trim(name));
+            f.editRoutine(NStringUtils.strip(name));
         }
         String ern = editRoutineName();
         if (ern == null) {
-            return NOptional.ofNamedEmpty(NMsg.ofC("routine %s", NStringUtils.firstNonBlankTrimmed(name, "self")));
+            return NOptional.ofNamedEmpty(NMsg.ofC("routine %s", NStringUtils.firstNonBlankStripped(name, "self")));
         }
         return session.routine(ern, this, true);
     }
