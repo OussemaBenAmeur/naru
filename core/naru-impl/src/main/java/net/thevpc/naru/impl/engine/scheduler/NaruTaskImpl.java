@@ -31,7 +31,7 @@ import net.thevpc.nuts.elem.*;
 import net.thevpc.nuts.expr.*;
 import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.text.NMsg;
-import net.thevpc.nuts.time.NChronometer;
+import net.thevpc.nuts.mon.NChronometer;
 import net.thevpc.nuts.time.NDuration;
 import net.thevpc.nuts.util.*;
 

@@ -16,7 +16,7 @@ import net.thevpc.nuts.net.NWebRequest;
 import net.thevpc.nuts.platform.NStoreScope;
 import net.thevpc.nuts.platform.NStoreType;
 import net.thevpc.nuts.text.*;
-import net.thevpc.nuts.time.NChronometer;
+import net.thevpc.nuts.mon.NChronometer;
 import net.thevpc.nuts.util.NBlankable;
 import net.thevpc.nuts.util.NIllegalArgumentException;
 import net.thevpc.nuts.util.NStringUtils;
