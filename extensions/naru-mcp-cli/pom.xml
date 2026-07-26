@@ -172,7 +172,7 @@
                             </tags>
                             <debug>true</debug>
                             <jdkToolchain>
-                                <version>1.8</version>
+                                <version>17</version>
                             </jdkToolchain>
                         </configuration>
                         <executions>

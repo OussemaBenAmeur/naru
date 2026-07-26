@@ -160,7 +160,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.4.0</version>
+                        <version>3.11.2</version>
                         <configuration>
                             <tags>
                                 <tag>
@@ -171,7 +171,7 @@
                             </tags>
                             <debug>true</debug>
                             <jdkToolchain>
-                                <version>1.8</version>
+                                <version>17</version>
                             </jdkToolchain>
                         </configuration>
                         <executions>
