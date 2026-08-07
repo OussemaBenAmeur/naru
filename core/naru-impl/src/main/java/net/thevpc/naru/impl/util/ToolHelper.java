@@ -12,6 +12,7 @@ import net.thevpc.nuts.io.NPathOption;
 import net.thevpc.nuts.io.NPathPermission;
 import net.thevpc.nuts.net.NWebCli;
 import net.thevpc.nuts.net.NWebResponse;
+import net.thevpc.nuts.pipeline.NIterator;
 import net.thevpc.nuts.time.NDuration;
 import net.thevpc.nuts.util.*;
 

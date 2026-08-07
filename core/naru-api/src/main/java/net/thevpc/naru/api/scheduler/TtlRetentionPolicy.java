@@ -30,7 +30,7 @@ public class TtlRetentionPolicy implements NaruRetentionPolicy {
 
     @Override
     public NElement toElement() {
-        return NElement.ofNamedUplet("ttl",
+        return NElement.ofNamedTuple("ttl",
                 NElement.ofString(NDuration.ofDuration(ttl).toString())
         );
     }

@@ -24,7 +24,7 @@ public class MaxConsumersRetentionPolicy implements NaruRetentionPolicy {
 
     @Override
     public NElement toElement() {
-        return NElement.ofNamedUplet("max",NElement.ofInt(maxConsumers));
+        return NElement.ofNamedTuple("max",NElement.ofInt(maxConsumers));
     }
 
     @Override

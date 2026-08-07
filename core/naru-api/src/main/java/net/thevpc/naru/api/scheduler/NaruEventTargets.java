@@ -192,7 +192,7 @@ public class NaruEventTargets {
 
             @Override
             public NElement toElement() {
-                return NElement.ofNamedUplet("and",
+                return NElement.ofNamedTuple("and",
                         validFilters.stream().map(NaruEventTarget::toElement).toArray(NElement[]::new)
                 );
             }
@@ -279,7 +279,7 @@ public class NaruEventTargets {
 
             @Override
             public NElement toElement() {
-                return NElement.ofNamedUplet("taskId",
+                return NElement.ofNamedTuple("taskId",
                         NElement.ofPair("id", tid)
                 );
             }
@@ -305,7 +305,7 @@ public class NaruEventTargets {
 
             @Override
             public NElement toElement() {
-                return NElement.ofNamedUplet("children",
+                return NElement.ofNamedTuple("children",
                         NElement.ofPair("taskId", taskId)
                 );
             }
@@ -331,7 +331,7 @@ public class NaruEventTargets {
 
             @Override
             public NElement toElement() {
-                return NElement.ofNamedUplet("sibling",
+                return NElement.ofNamedTuple("sibling",
                         NElement.ofPair("taskId", taskId),
                         NElement.ofPair("parentId", parentId)
                 );
@@ -361,7 +361,7 @@ public class NaruEventTargets {
 
             @Override
             public NElement toElement() {
-                return NElement.ofNamedUplet("or",
+                return NElement.ofNamedTuple("or",
                         validFilters.stream().map(NaruEventTarget::toElement).toArray(NElement[]::new)
                 );
             }
