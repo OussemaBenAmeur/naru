@@ -4,6 +4,9 @@ import net.thevpc.naru.api.agent.*;
 import net.thevpc.naru.api.budget.NaruMeteringService;
 import net.thevpc.naru.api.mode.NaruStandardMode;
 import net.thevpc.naru.api.model.*;
+import net.thevpc.naru.api.registry.NaruDirective;
+import net.thevpc.naru.api.registry.NaruTool;
+import net.thevpc.naru.api.registry.NaruToolTag;
 import net.thevpc.naru.api.routine.NaruRoutine;
 import net.thevpc.naru.api.scheduler.*;
 import net.thevpc.naru.api.skills.NaruSkillManager;
@@ -19,7 +22,7 @@ import net.thevpc.naru.impl.engine.scheduler.NaruSchedulerImpl;
 import net.thevpc.naru.impl.engine.scheduler.NaruSessionEventLogImpl;
 import net.thevpc.naru.impl.engine.scheduler.NaruTaskImpl;
 import net.thevpc.naru.impl.ia.skill.NaruSkillManagerImpl;
-import net.thevpc.naru.impl.util.NaruUtils;
+import net.thevpc.naru.impl.util.ImplNaruUtils;
 import net.thevpc.nuts.concurrent.NCallable;
 import net.thevpc.nuts.elem.*;
 import net.thevpc.nuts.io.*;
@@ -85,14 +88,19 @@ public class NaruSessionImpl implements NaruSession, NToElement {
     private volatile long schedulerThrottleDelayMs = 500;
 
 
-    public NaruSessionImpl(NaruAgent agent, NPath projectDir, NaruMeteringService meteringService, boolean configureDefaults, NaruSessionListener sessionListener) {
+    public NaruSessionImpl(NaruAgent agent, NPath projectDir, NaruMeteringService meteringService, boolean configureDefaults
+            , NaruSessionListener sessionListener
+            , Predicate<NaruDirective> directiveFilter
+            , Predicate<NaruTool> toolFilter
+            , Predicate<NaruToolTag> tagFilter
+    ) {
         this.agent = agent;
         this.projectDir = projectDir.normalize();
         this.workingDir = projectDir.normalize();
         this.meteringService = meteringService == null ? new NaruMeteringServiceImpl() : meteringService;
         this.sessionManager = new NaruSessionManagerImpl(this);
         this.skillManager = new NaruSkillManagerImpl(this);
-        this.registry = new NaruRegistryImpl(this);
+        this.registry = new NaruRegistryImpl(this,directiveFilter, toolFilter, tagFilter);
         this.sessionListener = sessionListener;
         NaruModelConfig model0 = null;
         NaruModelConfig model = model0;
@@ -1171,8 +1179,18 @@ public class NaruSessionImpl implements NaruSession, NToElement {
     }
 
     @Override
+    public NOptional<NaruModelConfig> loadModelConfig(String modelName) {
+        return ((NaruAgentImpl) agent()).getModelAliases().get(modelName);
+    }
+
+    @Override
+    public void saveModelConfig(String modelName, NaruModelConfig config) {
+        ((NaruAgentImpl) agent()).getModelAliases().put(modelName, config);
+    }
+
+    @Override
     public NOptional<NaruRoutine> routine(String nameOrPath, NaruTask task, boolean orCreate) {
-        if (NaruUtils.isPath(nameOrPath)) {
+        if (ImplNaruUtils.isPath(nameOrPath)) {
             NPath path = NPath.of(nameOrPath).toAbsolute(task.workingDir());
             if (path.exists()) {
                 return RoutineHelper.loadFileRoutine(path, true);
@@ -1183,7 +1201,7 @@ public class NaruSessionImpl implements NaruSession, NToElement {
                     return RoutineHelper.loadFileRoutine(path, true);
                 }
             }
-        } else if (NaruUtils.isValidRoutineName(nameOrPath)) {
+        } else if (ImplNaruUtils.isValidRoutineName(nameOrPath)) {
             NaruRoutine r = routines.get(nameOrPath);
             if (r != null) {
                 return NOptional.of(r);
@@ -1199,7 +1217,7 @@ public class NaruSessionImpl implements NaruSession, NToElement {
                 return RoutineHelper.loadFileRoutine(path, true);
             }
         }
-        if (NaruUtils.isValidRoutineName(nameOrPath) && orCreate) {
+        if (ImplNaruUtils.isValidRoutineName(nameOrPath) && orCreate) {
             return NOptional.of(routines.computeIfAbsent(nameOrPath, x ->
                     new NaruRoutineMem(UUID.randomUUID().toString(), x, getVisibility())));
         }

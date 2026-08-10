@@ -1,0 +1,57 @@
+package net.thevpc.naru.api.registry;
+
+import net.thevpc.naru.api.task.NaruTask;
+import net.thevpc.nuts.util.NLiteral;
+import net.thevpc.nuts.util.NOptional;
+
+import java.util.Map;
+
+public class NaruToolCallContextImpl implements NaruToolCallContext {
+    private final Map<String, Object> arguments;
+    private final NaruTask task;
+
+    public NaruToolCallContextImpl(Map<String, Object> arguments, NaruTask task) {
+        this.arguments = arguments;
+        this.task = task;
+    }
+
+    @Override
+    public Map<String, Object> arguments() {
+        return arguments;
+    }
+
+    @Override
+    public NaruTask task() {
+        return task;
+    }
+
+    @Override
+    public NOptional<Object> arg(String name) {
+        return NOptional.ofNamed(arguments.get(name), name);
+    }
+
+    @Override
+    public NOptional<String> stringArg(String name) {
+        return arg(name).map(x -> x.toString());
+    }
+
+    @Override
+    public NOptional<Number> numberArg(String name) {
+        return arg(name).flatMap(x -> NLiteral.of(x).asNumber());
+    }
+
+    @Override
+    public NOptional<Integer> intArg(String name) {
+        return numberArg(name).map(Number::intValue);
+    }
+
+    @Override
+    public NOptional<Long> longArg(String name) {
+        return numberArg(name).map(Number::longValue);
+    }
+
+    @Override
+    public NOptional<Boolean> booleanArg(String name) {
+        return arg(name).flatMap(x -> NLiteral.of(x).asBoolean());
+    }
+}

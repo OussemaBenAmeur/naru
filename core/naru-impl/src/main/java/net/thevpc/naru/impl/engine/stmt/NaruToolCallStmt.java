@@ -6,7 +6,7 @@ import net.thevpc.naru.api.task.NaruTask;
 import net.thevpc.naru.api.model.NaruMessage;
 import net.thevpc.naru.api.model.NaruToolCall;
 import net.thevpc.naru.api.stmt.NaruStatement;
-import net.thevpc.naru.impl.util.NaruUtils;
+import net.thevpc.naru.impl.util.ImplNaruUtils;
 import net.thevpc.nuts.elem.*;
 import net.thevpc.nuts.text.NMsg;
 import net.thevpc.nuts.text.NText;
@@ -60,7 +60,7 @@ public class NaruToolCallStmt extends NaruStatement implements Cloneable {
         String result = task.session().registry().dispatch(call, task);
         task.log(NaruLogMode.PROGRESS, NMsg.ofC("  %s Result: %s",
                 NMsg.ofStyledPrimary6("📤"),
-                NaruUtils.abbreviate(result, 300)));
+                ImplNaruUtils.abbreviate(result, 300)));
         task.addHistory(NaruMessage.tool(call.getName(), call.getId(), result));
         task.defaultAdvance(this);
         task.frame().lastResult(NaruStmtResult.ofSuccess(result));

@@ -10,7 +10,6 @@ import net.thevpc.nuts.util.NOptional;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.function.Supplier;
 
 public class MarkdownWithHeader {
     private NPath source;
@@ -54,7 +53,7 @@ public class MarkdownWithHeader {
                         p = str;
                     }
                     if (!NBlankable.isBlank(h) || !NBlankable.isBlank(p)) {
-                        Map<String, NElement> e = NaruUtils.parseEnv(NElementReader.ofTson().read(h));
+                        Map<String, NElement> e = ImplNaruUtils.parseEnv(NElementReader.ofTson().read(h));
                         if (e.isEmpty() && NBlankable.isBlank(p)) {
                             return NOptional.ofNamedEmpty(NMsg.ofC("path %s", source));
                         }

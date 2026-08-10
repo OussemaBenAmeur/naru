@@ -31,3 +31,16 @@ documentation/term-cast/demo-install/naru-install-demo.gif
 documentation/.naru
 /.naru/local/
 /extensions/naru-mcp-cli/target
+/FleetViewManager20260704.bak
+/extensions/naru-tools-coder-java/target/
+/extensions/naru-ai-models/target/
+/extensions/naru-tools-fs/target/
+/extensions/naru-tools-llm/target/
+/extensions/naru-tools-mcp/target/
+/extensions/naru-tools-shell/target/
+/extensions/naru-tools-sessions/target/
+/extensions/naru-tools-tags/target/
+/extensions/naru-tools-tasks/target/
+/extensions/naru-tools-web/target/
+/extensions/naru-tools-routines/target/
+/app/naru/target

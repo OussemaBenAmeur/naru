@@ -1,0 +1,3 @@
+net.thevpc.naru.ext.tools.fs.NaruFilesystemToolTagProvider
+net.thevpc.naru.ext.tools.fs.NaruFilesystemToolsetProvider
+net.thevpc.naru.ext.tools.fs.NaruFilesystemDirectiveProvider

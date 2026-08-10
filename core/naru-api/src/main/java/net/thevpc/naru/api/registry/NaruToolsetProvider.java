@@ -1,11 +1,12 @@
 package net.thevpc.naru.api.registry;
 
 import net.thevpc.nuts.elem.NObjectElement;
+import net.thevpc.nuts.spi.NComponent;
 import net.thevpc.nuts.util.NNameFormat;
 
 import java.util.List;
 
-public interface NaruToolsetProvider {
+public interface NaruToolsetProvider extends NComponent {
     String name();                      // "mcp-stdio", "mcp-sse", "builtin", ...
 
     List<String> supportedTypes();   // static: what types I know about

@@ -2,15 +2,15 @@ package net.thevpc.naru.impl.registry.builtindirectives;
 
 import net.thevpc.naru.api.agent.NaruLogMode;
 import net.thevpc.naru.api.agent.NaruSession;
+import net.thevpc.naru.api.registry.NaruDirectiveBase;
 import net.thevpc.naru.api.task.NaruTask;
 import net.thevpc.naru.api.registry.NaruDirective;
 import net.thevpc.naru.api.registry.NaruDirectiveCallContext;
 import net.thevpc.naru.impl.registry.NaruDirectiveCallContextImpl;
-import net.thevpc.naru.impl.util.NaruUtils;
+import net.thevpc.naru.impl.util.ImplNaruUtils;
 import net.thevpc.nuts.cmdline.NArgCandidate;
 import net.thevpc.nuts.cmdline.NCmdLine;
 import net.thevpc.nuts.cmdline.NCmdLineAutoCompleteResolver;
-import net.thevpc.nuts.elem.NElement;
 import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.text.NMsg;
 import net.thevpc.nuts.text.NText;
@@ -20,7 +20,7 @@ import net.thevpc.nuts.util.NLiteral;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class NaruHelpDirective extends AbstractDirective {
+public class NaruHelpDirective extends NaruDirectiveBase {
     private static final Map<String, HelpExample> EXAMPLES_REGISTRY_BY_NAME = new HashMap<>();
     private static final Map<Integer, HelpExample> EXAMPLES_REGISTRY_BY_NUM = new HashMap<>();
 
@@ -250,10 +250,10 @@ public class NaruHelpDirective extends AbstractDirective {
         }
 
         w.log(NMsg.ofC(""));
-        w.log(NMsg.ofC("For targeted sub-command parameter layouts, type: %s %s [%s]", NaruUtils.formatDirective("help"), NMsg.ofStyledPlaceholder("<directive_name>"), NMsg.ofStyledPlaceholder("<subcommand>")));
-        w.log(NMsg.ofC("For detailed help, type: %s %s",NaruUtils.formatDirective("help"), NMsg.ofStyledOption("--full") ));
-        w.log(NMsg.ofC("For source examples, type: %s %s",NaruUtils.formatDirective("help") , NMsg.ofStyledOption("--examples") ));
-        w.log(NMsg.ofC("For source indexed example, type: %s %s %s",NaruUtils.formatDirective("help"), NMsg.ofStyledOption("-e") , NMsg.ofStyledNumber("<number>") ));
+        w.log(NMsg.ofC("For targeted sub-command parameter layouts, type: %s %s [%s]", ImplNaruUtils.formatDirective("help"), NMsg.ofStyledPlaceholder("<directive_name>"), NMsg.ofStyledPlaceholder("<subcommand>")));
+        w.log(NMsg.ofC("For detailed help, type: %s %s", ImplNaruUtils.formatDirective("help"), NMsg.ofStyledOption("--full") ));
+        w.log(NMsg.ofC("For source examples, type: %s %s", ImplNaruUtils.formatDirective("help") , NMsg.ofStyledOption("--examples") ));
+        w.log(NMsg.ofC("For source indexed example, type: %s %s %s", ImplNaruUtils.formatDirective("help"), NMsg.ofStyledOption("-e") , NMsg.ofStyledNumber("<number>") ));
         w.log(NMsg.ofC("To safely close out active environment processing stream session: %s", formatDirective("exit")));
     }
 

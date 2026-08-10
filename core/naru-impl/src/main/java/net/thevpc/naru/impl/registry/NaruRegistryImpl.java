@@ -7,16 +7,15 @@ import net.thevpc.naru.api.mode.NaruPromptMode;
 import net.thevpc.naru.api.mode.NaruStandardMode;
 import net.thevpc.naru.api.model.*;
 import net.thevpc.naru.api.registry.*;
-import net.thevpc.naru.impl.ia.mode.NAruModeRegistry;
-import net.thevpc.naru.impl.ia.model.gemini.NaruGeminiProvider;
-import net.thevpc.naru.impl.ia.model.mistral.NaruMistralProvider;
-import net.thevpc.naru.impl.ia.model.ollama.NaruOllamaProvider;
+import net.thevpc.naru.impl.ia.mode.NaruModeRegistry;
 import net.thevpc.nuts.elem.NObjectElement;
 import net.thevpc.nuts.elem.NPairElement;
+import net.thevpc.nuts.ext.NExtensions;
 import net.thevpc.nuts.text.NMsg;
 import net.thevpc.nuts.util.*;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -36,11 +35,21 @@ public class NaruRegistryImpl implements NaruRegistry {
     private final Map<String, NaruToolTag> availableToolTags = new LinkedHashMap<>();
     private final Map<String, String> directiveAliases = new LinkedHashMap<>();
     private final Map<String, NaruModelProvider> modelProviders = new HashMap<>();
-    private final NAruModeRegistry modeRegistry = new NAruModeRegistry();
+    private final NaruModeRegistry modeRegistry = new NaruModeRegistry();
     private final NaruSession session;
+    private final Predicate<NaruDirective> directiveFilter;
+    private final Predicate<NaruTool> toolFilter;
+    private final Predicate<NaruToolTag> tagFilter;
 
-    public NaruRegistryImpl(NaruSession session) {
+    public NaruRegistryImpl(NaruSession session
+            ,Predicate<NaruDirective> directiveFilter
+            ,Predicate<NaruTool> toolFilter
+            ,Predicate<NaruToolTag> tagFilter
+    ) {
         this.session = session;
+        this.directiveFilter = directiveFilter;
+        this.toolFilter = toolFilter;
+        this.tagFilter = tagFilter;
     }
 
     @Override
@@ -169,19 +178,32 @@ public class NaruRegistryImpl implements NaruRegistry {
     }
 
 
-    private NaruRegistry registerDirective(NaruDirective tool) {
-        availableDirectives.put(tool.name(), tool);
-        for (String alias : tool.getAliases()) {
+    private NaruRegistry registerDirective(NaruDirective directive) {
+        if(directive==null){
+            return this;
+        }
+        if (directiveFilter != null) {
+            if(!directiveFilter.test(directive)) {
+                return this;
+            }
+        }
+        availableDirectives.put(directive.name(), directive);
+        for (String alias : directive.getAliases()) {
             String old = directiveAliases.get(alias);
-            if (old != null && !old.equals(tool.name())) {
+            if (old != null && !old.equals(directive.name())) {
                 throw new IllegalArgumentException("alias " + alias + " is already used by " + old);
             }
-            directiveAliases.put(alias, tool.name());
+            directiveAliases.put(alias, directive.name());
         }
         return this;
     }
 
     private NaruRegistry registerToolTag(NaruToolTag tool) {
+        if (tagFilter != null) {
+            if(!tagFilter.test(tool)) {
+                return this;
+            }
+        }
         String n = NNameFormat.LOWER_KEBAB_CASE.format(tool.name());
         if (!availableToolTags.containsKey(n)) {
             availableToolTags.put(n, tool);
@@ -363,12 +385,20 @@ public class NaruRegistryImpl implements NaruRegistry {
 
     public NaruRegistry registerDefaults() {
         this.registerToolsetProvider(new NaruBuiltinToolsetProvider());
-        this.registerToolsetProvider(new NaruCommonToolsetProvider());
         this.registerDirectiveProvider(new NaruBuiltinDirectiveProvider());
         this.registerToolTagProvider(new NaruBuiltinToolTagProvider());
-        this.registerModelProvider(new NaruOllamaProvider());
-        this.registerModelProvider(new NaruGeminiProvider());
-        this.registerModelProvider(new NaruMistralProvider());
+        for (NaruToolTagProvider provider : NExtensions.of().createAllSupported(NaruToolTagProvider.class, null)) {
+            this.registerToolTagProvider(provider);
+        }
+        for (NaruToolsetProvider provider : NExtensions.of().createAllSupported(NaruToolsetProvider.class, null)) {
+            this.registerToolsetProvider(provider);
+        }
+        for (NaruDirectiveProvider provider : NExtensions.of().createAllSupported(NaruDirectiveProvider.class, null)) {
+            this.registerDirectiveProvider(provider);
+        }
+        for (NaruModelProvider provider : NExtensions.of().createAllSupported(NaruModelProvider.class, null)) {
+            this.registerModelProvider(provider);
+        }
         return this;
     }
 

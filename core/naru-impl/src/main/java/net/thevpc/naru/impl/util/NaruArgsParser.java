@@ -14,7 +14,7 @@ public class NaruArgsParser {
 
     public NaruArgsParser(String command) {
         String c = command == null ? "" : command.trim();
-        if (NaruUtils.isPath(c)) {
+        if (ImplNaruUtils.isPath(c)) {
             args.add(NElement.ofString(c.trim()));
         } else {
             NElement u = NElementReader.ofTson().read(c);

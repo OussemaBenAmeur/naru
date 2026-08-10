@@ -21,6 +21,7 @@ public interface NaruRegistry {
     NaruRegistry registerToolsetProvider(NaruToolsetProvider tool);
 
     NaruRegistry registerToolTagProvider(NaruToolTagProvider toolTagProvider);
+
     NaruRegistry registerDirectiveProvider(NaruDirectiveProvider naruDirectiveProvider);
 
 //    NaruRegistry registerDirective(NaruDirective tool);
@@ -64,5 +65,6 @@ public interface NaruRegistry {
     NOptional<NaruPromptMode> mode(String mode);
 
     NOptional<NaruToolTag> findAvailableTag(String name);
-    Map<String,NaruToolTag> availableTags();
+
+    Map<String, NaruToolTag> availableTags();
 }

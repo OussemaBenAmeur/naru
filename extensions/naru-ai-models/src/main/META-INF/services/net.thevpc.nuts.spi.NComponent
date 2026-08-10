@@ -1,0 +1,3 @@
+net.thevpc.naru.ext.models.gemini.NaruGeminiProvider
+net.thevpc.naru.ext.models.mistral.NaruMistralProvider
+net.thevpc.naru.ext.models.ollama.NaruOllamaProvider

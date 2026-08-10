@@ -1,6 +1,7 @@
 package net.thevpc.naru.api.model;
 
 import net.thevpc.naru.api.agent.NaruSession;
+import net.thevpc.nuts.spi.NComponent;
 import net.thevpc.nuts.text.NMsg;
 import net.thevpc.nuts.util.NIllegalArgumentException;
 import net.thevpc.nuts.util.NLiteral;
@@ -13,7 +14,7 @@ import java.util.Set;
  * Abstraction over any LLM backend (Ollama, OpenAI, Anthropic, …).
  * Implement this interface to add a new provider.
  */
-public interface NaruModelProvider {
+public interface NaruModelProvider extends NComponent {
 
     NOptional<NaruModelProtocol> getProtocol(NaruModelConfig model, NaruSession session);
 

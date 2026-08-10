@@ -2,12 +2,15 @@ package net.thevpc.naru.impl.engine;
 
 import net.thevpc.naru.api.agent.*;
 import net.thevpc.naru.api.model.*;
+import net.thevpc.naru.api.registry.NaruDirective;
+import net.thevpc.naru.api.registry.NaruTool;
+import net.thevpc.naru.api.registry.NaruToolTag;
 import net.thevpc.naru.api.scheduler.NaruEvent;
 import net.thevpc.naru.api.scheduler.NaruTaskMode;
 import net.thevpc.naru.api.task.NaruTaskSpec;
 import net.thevpc.naru.api.registry.NaruRegistry;
 import net.thevpc.naru.impl.ia.budget.NaruMeteringServiceImpl;
-import net.thevpc.naru.impl.cmdline.NaruTerminalFormatter;
+import net.thevpc.naru.api.util.NaruTerminalFormatter;
 import net.thevpc.naru.impl.cmdline.NaruNCmdLineAutoCompleteResolver;
 import net.thevpc.naru.impl.util.StoredStringMap;
 import net.thevpc.nuts.artifact.NVersion;
@@ -21,6 +24,7 @@ import net.thevpc.nuts.util.*;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Predicate;
 
 /**
  * The core agent loop.
@@ -58,6 +62,10 @@ public class NaruAgentImpl implements NaruAgent {
             });
     private final ConcurrentLinkedQueue<Runnable> pendingActions = new ConcurrentLinkedQueue<>();
 
+    private Predicate<NaruDirective> directiveFilter;
+    private Predicate<NaruTool> toolFilter;
+    private Predicate<NaruToolTag> tagFilter;
+
     private final NaruSessionListener asSessionListener = new NaruSessionListener() {
 
         @Override
@@ -89,6 +97,33 @@ public class NaruAgentImpl implements NaruAgent {
 
     public NaruAgentImpl() {
         this.logger = NLogger.STDOUT;
+    }
+
+    public Predicate<NaruDirective> directiveFilter() {
+        return directiveFilter;
+    }
+
+    public NaruAgentImpl setDirectiveFilter(Predicate<NaruDirective> directiveFilter) {
+        this.directiveFilter = directiveFilter;
+        return this;
+    }
+
+    public Predicate<NaruTool> toolFilter() {
+        return toolFilter;
+    }
+
+    public NaruAgentImpl setToolFilter(Predicate<NaruTool> toolFilter) {
+        this.toolFilter = toolFilter;
+        return this;
+    }
+
+    public Predicate<NaruToolTag> tagFilter() {
+        return tagFilter;
+    }
+
+    public NaruAgentImpl setTagFilter(Predicate<NaruToolTag> tagFilter) {
+        this.tagFilter = tagFilter;
+        return this;
     }
 
     public <T> Future<T> postAction(NCallable<T> action) {
@@ -215,7 +250,7 @@ public class NaruAgentImpl implements NaruAgent {
         if (dir == null) {
             dir = NPath.ofUserDirectory();
         }
-        return new NaruSessionImpl(this, dir.toAbsolute(), meteringService, true, asSessionListener);
+        return new NaruSessionImpl(this, dir.toAbsolute(), meteringService, true, asSessionListener,directiveFilter, toolFilter, tagFilter);
     }
 
 
@@ -236,73 +271,7 @@ public class NaruAgentImpl implements NaruAgent {
                 .commandHighlighter(new NaruTerminalFormatter(session))
         ;
     }
-//    private void handleCallDirective(String raw, NaruSession ctx, NaruRoutine routine) {
-//        // Parse: /call subName arg1 arg2 (simple split; upgrade to tokenizer later)
-//        String[] parts = raw.substring(6).trim().split("\\s+");
-//        String subName = parts[0];
-//        List<String> args = Arrays.asList(Arrays.copyOfRange(parts, 1, parts.length));
-//
-//        SubroutineDef sub = routine.getSubroutines().get(subName);
-//        if (sub == null) {
-//            log(NaruLogMode.AGENT_RESPONSE, NMsg.ofC("Error : Unknown subroutine: %s", subName).asError());
-//            advancePcOrEnd(ctx, routine);
-//            return;
-//        }
-//        if (sub.params().size() != args.size()) {
-//            log(NaruLogMode.AGENT_RESPONSE, NMsg.ofC("Error : Arg mismatch for /call %s: expected %d, got %d",
-//                    subName, sub.params().size(), args.size()).asError());
-//            advancePcOrEnd(ctx, routine);
-//            return;
-//        }
-//
-//        // Save return point: next line after /call
-//        Integer nextLine = routine.getLinesSet().higherKey(ctx.pc());
-//
-//        // Push new context frame with returnPc + params
-//        ctx.pushContext(sub.startLine(), nextLine); // Adds new RunContext at index 0
-//
-//        // Bind params to new frame
-//        for (int i = 0; i < sub.params().size(); i++) {
-//            ctx.getTopContext().bindParam(sub.params().get(i), args.get(i));
-//        }
-//
-//        // Continue execution at subroutine start
-//        ctx.pushStatement(NaruStatementHelper.ofExecRoutineLine());
-//    }
 
-//    private void advancePcOrEnd(NaruSession ctx, NaruRoutine routine) {
-//        Integer next = routine.getLinesSet().higherKey(ctx.pc());
-//        if (next != null) {
-//            ctx.pc(next);
-//            ctx.pushStatement(NaruStatementHelper.ofExecRoutineLine());
-//        } else {
-//            log(NaruLogMode.PROGRESS, NMsg.ofC("Routine execution finished."));
-//            ctx.pc(-1);
-////            if (ctx.isForever()) {
-////                ctx.pushStatement(NaruStatementHelper.ofReadLine());
-////            }
-//        }
-//    }
-
-//    private void handleReturnDirective(NaruSession ctx) {
-//        RunContext current = ctx.getTopContext();
-//        Integer resumePc = current.returnPc();
-//
-//        // Pop the subroutine frame
-//        ctx.popStatement(); // Removes index 0 RunContext
-//
-//        if (resumePc != null) {
-//            ctx.pc(resumePc);
-//            ctx.pushStatement(NaruStatementHelper.ofExecRoutineLine());
-//        } else {
-//            // No return point → end of routine
-//            log(NaruLogMode.PROGRESS, NMsg.ofC("Subroutine returned to end of routine."));
-
-    /// /            if (ctx.isForever()) {
-    /// /                ctx.pushStatement(NaruStatementHelper.ofReadLine());
-    /// /            }
-//        }
-//    }
     @Override
     public void log(NaruLogMode mode, NMsg message) {
         //if (config.isVerbose() && logger != null) {

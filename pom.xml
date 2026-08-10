@@ -16,8 +16,20 @@
     <modules>
         <module>core/naru-api</module>
         <module>core/naru-impl</module>
-        <module>extensions/naru-mcp-cli</module>
-        <module>app</module>
+
+        <module>extensions/naru-tools-fs</module>
+        <module>extensions/naru-tools-mcp</module>
+        <module>extensions/naru-tools-shell</module>
+        <module>extensions/naru-tools-web</module>
+        <module>extensions/naru-tools-coder-java</module>
+        <module>extensions/naru-tools-llm</module>
+        <module>extensions/naru-tools-sessions</module>
+        <module>extensions/naru-tools-routines</module>
+        <module>extensions/naru-tools-tasks</module>
+        <module>extensions/naru-tools-tags</module>
+        <module>extensions/naru-ai-models</module>
+
+        <module>app/naru</module>
     </modules>
     <build>
     </build>

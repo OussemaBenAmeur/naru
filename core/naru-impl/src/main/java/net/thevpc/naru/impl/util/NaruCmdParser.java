@@ -28,7 +28,7 @@ public class NaruCmdParser {
                 name = c.substring(0, i).trim();
                 String rest = c.substring(i + 1).trim();
                 if (!rest.isEmpty()) {
-                    if (NaruUtils.isPath(rest)) {
+                    if (ImplNaruUtils.isPath(rest)) {
                         args.add(NElement.ofString(rest.trim()));
                     } else {
                         NElement u = NElementReader.ofTson().read(rest);
@@ -46,7 +46,7 @@ public class NaruCmdParser {
             }
         } else {
             name = "";
-            if (NaruUtils.isPath(c)) {
+            if (ImplNaruUtils.isPath(c)) {
                 args.add(NElement.ofString(c.trim()));
             } else {
                 NElement u = NElementReader.ofTson().read(c);
