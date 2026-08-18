@@ -104,7 +104,7 @@ public class NaruOpenApiResponseParser implements NElementDeserializer<NaruRespo
                                 for (NPairElement entry : argsEl.asObject().get().namedPairs()) {
                                     String k = entry.key().asStringValue().orNull();
                                     if (!NBlankable.isBlank(k)) {
-                                        args.put(k, NElements.of().toSimple(entry.value()));
+                                        args.put(k, NElement.simpleOf(entry.value()));
                                     }
                                 }
                             } else if (argsEl.isPrimitive()) {

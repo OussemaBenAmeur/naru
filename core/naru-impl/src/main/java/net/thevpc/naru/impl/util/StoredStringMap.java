@@ -63,7 +63,7 @@ public class StoredStringMap<T> {
             T a = deserializer.apply(value);
             return a;
         }
-        return NElements.of().fromElement(value, type);
+        return NElement.convertAny(value, type);
     }
 
     private NElement serializeValue(T value) {
@@ -77,7 +77,7 @@ public class StoredStringMap<T> {
         if (value == null) {
             return NElement.ofNull();
         }
-        return NElements.of().toElement(value);
+        return NElement.of(value);
     }
 
 

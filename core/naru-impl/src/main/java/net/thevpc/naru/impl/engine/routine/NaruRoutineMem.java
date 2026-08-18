@@ -78,7 +78,7 @@ public class NaruRoutineMem implements NaruRoutine {
         b.add("visibility", visibility == null ? "private" : visibility.name().toLowerCase());
         b.add("creationInstant", NElement.ofInstant(creationInstant == null ? Instant.now() : creationInstant));
         b.add("modificationInstant", NElement.ofInstant(modificationInstant == null ? Instant.now() : modificationInstant));
-        b.add("lines", NElements.of().toElement(lines));
+        b.add("lines", NElement.of(lines));
         return b.build();
     }
 

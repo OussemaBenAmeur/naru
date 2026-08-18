@@ -32,10 +32,10 @@ public class NaruTaskFrameImpl implements NaruTaskFrame {
         this.returnPc = o.getIntValue("returnPc").orNull();
         this.inheritVars = o.getBooleanValue("inheritVars").orNull();
         for (NPairElement p : o.getObject("params").orElse(NObjectElement.ofEmpty()).namedPairs()) {
-            this.params.put(p.key().asStringValue().orNull(), NElements.of().toSimple(p.value())); // NEW
+            this.params.put(p.key().asStringValue().orNull(), NElement.simpleOf(p.value())); // NEW
         }
         for (NPairElement p : o.getObject("localVars").orElse(NObjectElement.ofEmpty()).namedPairs()) {
-            this.localVars.put(p.key().asStringValue().orNull(), NElements.of().toSimple(p.value())); // NEW
+            this.localVars.put(p.key().asStringValue().orNull(), NElement.simpleOf(p.value())); // NEW
         }
         for (NElement item : o.getArray("todo").get().children()) {
             this.todo.add(NaruStatementHelper.of(item));
@@ -156,18 +156,17 @@ public class NaruTaskFrameImpl implements NaruTaskFrame {
     @Override
     public NElement toElement() {
         NObjectElementBuilder pb = NObjectElementBuilder.of();
-        NElements ee = NElements.of();
         for (Map.Entry<String, Object> e : params.entrySet()) {
-            pb.set(e.getKey(), ee.toElement(e.getValue()));
+            pb.set(e.getKey(), NElement.of(e.getValue()));
         }
         NObjectElementBuilder ps = NObjectElementBuilder.of();
         for (Map.Entry<String, Object> e : localVars.entrySet()) {
-            ps.set(e.getKey(), ee.toElement(e.getValue()));
+            ps.set(e.getKey(), NElement.of(e.getValue()));
         }
         return NElement.ofObjectBuilder()
                 .set("pc", pc)
                 .set("returnPc", returnPc)
-                .set("lastResult", ee.toElement(lastResult))
+                .set("lastResult", NElement.of(lastResult))
                 .set("inheritVars", inheritVars)
                 .set("params", pb.build())
                 .set("localVars", ps.build())

@@ -6,7 +6,6 @@ import net.thevpc.naru.api.model.*;
 import net.thevpc.naru.api.registry.NaruToolParameter;
 import net.thevpc.nuts.elem.NArrayElementBuilder;
 import net.thevpc.nuts.elem.NElement;
-import net.thevpc.nuts.elem.NElements;
 import net.thevpc.nuts.elem.NObjectElementBuilder;
 
 import java.util.*;
@@ -122,7 +121,7 @@ public class NaruOpenApiRequestSerializer implements NaruModelRequestSerializer 
 
                 if (tc.getArguments() != null) {
                     // FIXED: OpenAI strictly mandates that arguments are passed as a JSON-escaped string
-                    String jsonStringArgs = NElements.of().toElement(tc.getArguments()).toString();
+                    String jsonStringArgs = NElement.of(tc.getArguments()).toString();
                     fn.set("arguments", NElement.ofString(jsonStringArgs));
                 }
 

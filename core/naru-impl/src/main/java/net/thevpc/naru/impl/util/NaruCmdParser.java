@@ -17,8 +17,8 @@ public class NaruCmdParser {
             if (c.charAt(i) == '(') {
                 //it all tson
                 NElement u = NElementReader.ofTson().read(c);
-                if (u.isNamedUplet()) {
-                    NUpletElement uu = u.asUplet().get();
+                if (u.isNamedTuple()) {
+                    NTupleElement uu = u.asTuple().get();
                     name = uu.name().get();
                     args.addAll(uu.params());
                 } else {

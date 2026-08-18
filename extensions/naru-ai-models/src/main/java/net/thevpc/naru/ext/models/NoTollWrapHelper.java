@@ -35,7 +35,7 @@ public class NoTollWrapHelper {
                         t.put("tool", toolCall.getName());
                         t.put("args", new HashMap<>(toolCall.getArguments()));
                         sb.append(
-                                NElementWriter.ofJson().formatPlain(NElements.of().toElement(t))
+                                NElementWriter.ofJson().formatPlain(NElement.of(t))
                         ).append("\n");
                         sb.append(callSep.close+"\n");
                     }
@@ -147,7 +147,7 @@ public class NoTollWrapHelper {
                 NaruToolCall call = new NaruToolCall();
                 call.setId("emulated-" + UUID.randomUUID().toString().substring(0, 8));
                 call.setName(toolName);
-                call.setArguments(argsEl != null ? (Map) NElements.of().fromElement(argsEl,Map.class) : new HashMap<>());
+                call.setArguments(argsEl != null ? (Map) argsEl.convertTo(Map.class) : new HashMap<>());
                 calls.add(call);
             } catch (Exception e) {
                 task.log(NaruLogMode.AGENT_RESPONSE,

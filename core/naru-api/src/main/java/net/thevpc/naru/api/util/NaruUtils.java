@@ -26,7 +26,7 @@ public class NaruUtils {
                 break;
             }
             default: {
-                nText = NTexts.of().ofPlain(context2);
+                nText = NText.ofPlain(context2);
                 break;
             }
         }

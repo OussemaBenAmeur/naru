@@ -127,7 +127,7 @@ public class NaruOllamaNativeRequestSerializer implements NaruModelRequestSerial
 
                 if (tc.getArguments() != null) {
                     // Ollama native engine requires arguments to be a serialized string in history contexts
-                    String jsonStringArgs = NElementWriter.ofJson().formatPlain(NElements.of().toElement(tc.getArguments()));
+                    String jsonStringArgs = NElementWriter.ofJson().formatPlain(NElement.of(tc.getArguments()));
                     fn.set("arguments", NElement.ofString(jsonStringArgs));
                 }
 

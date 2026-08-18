@@ -2,7 +2,6 @@ package net.thevpc.naru.api.model;
 
 import net.thevpc.nuts.elem.*;
 import net.thevpc.nuts.util.NCopiable;
-import net.thevpc.nuts.util.NOptional;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +30,7 @@ public class NaruToolCall implements NToElement, NCopiable, Cloneable {
                 if (child.isNamedPair()) {
                     NPairElement p = child.asPair().get();
                     String k = p.key().asStringValue().orNull();
-                    Object v = NElements.of().toSimple(p.value());
+                    Object v = NElement.simpleOf(p.value());
                     arguments.put(k, v);
                 }
             }
@@ -67,7 +66,7 @@ public class NaruToolCall implements NToElement, NCopiable, Cloneable {
         return NObjectElementBuilder.of()
                 .set("id", id)
                 .set("name", name)
-                .set("arguments", NElements.of().toElement(arguments == null ? new HashMap<>() : arguments))
+                .set("arguments", NElement.of(arguments == null ? new HashMap<>() : arguments))
                 .build();
     }
 

@@ -14,7 +14,6 @@ import net.thevpc.nuts.cmdline.NCmdLineAutoCompleteResolver;
 import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.text.NMsg;
 import net.thevpc.nuts.text.NText;
-import net.thevpc.nuts.text.NTexts;
 import net.thevpc.nuts.util.NLiteral;
 
 import java.util.*;
@@ -295,12 +294,12 @@ public class NaruHelpDirective extends NaruDirectiveBase {
                 // Fetch the whole script content natively from the classpath
                 String content = NPath.of("classpath:" + resourcePath).readString();
                 if (content == null || content.trim().isEmpty()) {
-                    return NTexts.of().ofPlain("# (Empty example file)");
+                    return NText.ofPlain("# (Empty example file)");
                 }
                 // Use the framework's token highlighting stream for Naru syntax
-                return NTexts.of().ofCode("naru", content);
+                return NText.ofCode("naru", content);
             } catch (Exception e) {
-                return NTexts.of().of(NMsg.ofC("# Error: Could not read example resource from %s", resourcePath));
+                return NText.of(NMsg.ofC("# Error: Could not read example resource from %s", resourcePath));
             }
         }
     }

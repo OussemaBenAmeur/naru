@@ -47,9 +47,9 @@ public class NaruToolCallStmt extends NaruStatement implements Cloneable {
 
     @Override
     public void exec(NaruTask task) {
-        NUpletElementBuilder t = NElement.ofUpletBuilder(call.getName());
+        NTupleElementBuilder t = NElement.ofTupleBuilder(call.getName());
         for (Map.Entry<String, Object> e : call.getArguments().entrySet()) {
-            t.set(e.getKey(), NElements.of().toElement(e.getValue()));
+            t.set(e.getKey(), NElement.of(e.getValue()));
         }
 
         task.log(NaruLogMode.PROGRESS, NMsg.ofC("%s Tool: %s",

@@ -459,7 +459,7 @@ public class NaruTaskImpl implements NaruTask, NaruTaskSchedulerView {
         }
         NObjectElementBuilder _props = NObjectElementBuilder.of();
         for (Map.Entry<String, NOptional<Object>> e : env.entrySet()) {
-            _props.add(e.getKey(), NElements.of().toElement(e.getValue().orNull()));
+            _props.add(e.getKey(), NElement.of(e.getValue().orNull()));
         }
         o.set("history", _history.build());
         o.set("env", _props.build());
@@ -510,7 +510,7 @@ public class NaruTaskImpl implements NaruTask, NaruTaskSchedulerView {
         if (props1 != null) {
             for (NPairElement nElement : props1.namedPairs()) {
                 env.put(nElement.key().asStringValue().orNull(),
-                        NOptional.ofNullable(NElements.of().toSimple(nElement.value()))
+                        NOptional.ofNullable(NElement.simpleOf(nElement.value()))
                 );
             }
         }

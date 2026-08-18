@@ -478,7 +478,7 @@ public class NaruSessionImpl implements NaruSession, NToElement {
         if (env1 != null) {
             for (NPairElement nElement : env1.asListContainer().get().namedPairs()) {
                 env.put(nElement.key().asStringValue().orNull(),
-                        NOptional.ofNullable(NElements.of().toSimple(nElement.value()))
+                        NOptional.ofNullable(NElement.simpleOf(nElement.value()))
                 );
             }
         }
@@ -773,7 +773,7 @@ public class NaruSessionImpl implements NaruSession, NToElement {
         o.set("workingDir", workingDir == null ? null : NElement.ofString(workingDir.toString()));
         NObjectElementBuilder _props = NObjectElementBuilder.of();
         for (Map.Entry<String, NOptional<Object>> e : env.entrySet()) {
-            _props.add(e.getKey(), NElements.of().toElement(e.getValue().orNull()));
+            _props.add(e.getKey(), NElement.of(e.getValue().orNull()));
         }
         o.set("env", _props.build());
         return o.build();
