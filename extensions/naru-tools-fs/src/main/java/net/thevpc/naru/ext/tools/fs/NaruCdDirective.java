@@ -4,9 +4,7 @@ import net.thevpc.naru.api.agent.NaruSession;
 import net.thevpc.naru.api.task.NaruTask;
 import net.thevpc.naru.api.registry.NaruDirectiveCallContext;
 import net.thevpc.naru.api.registry.NaruDirectiveBase;
-import net.thevpc.nuts.cmdline.NArgCandidate;
-import net.thevpc.nuts.cmdline.NCmdLine;
-import net.thevpc.nuts.cmdline.NCmdLineAutoCompleteResolver;
+import net.thevpc.nuts.cmdline.*;
 import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.text.NMsg;
 import net.thevpc.nuts.util.NBlankable;
@@ -32,11 +30,11 @@ public class NaruCdDirective extends NaruDirectiveBase {
     }
 
     @Override
-    public List<NArgCandidate> resolveCandidates(
+    public List<NArgCompleteCandidate> resolveCandidates(
             NCmdLine cmdLine,
-            NCmdLineAutoCompleteResolver.Pos pos,
+            NArgCompletePos pos,
             NaruSession session) {
-        List<NArgCandidate> candidates = new java.util.ArrayList<>();
+        List<NArgCompleteCandidate> candidates = new java.util.ArrayList<>();
         String[] stringArray = cmdLine.toStringArray();
         int wordIndex = pos.wordIndex();
         String prefix = wordIndex < stringArray.length ? stringArray[wordIndex] : "";
@@ -72,7 +70,7 @@ public class NaruCdDirective extends NaruDirectiveBase {
                         if (resultPath.startsWith("." + java.io.File.separator)) {
                             resultPath = resultPath.substring(2);
                         }
-                        candidates.add(new net.thevpc.nuts.cmdline.DefaultNArgCandidate(resultPath + java.io.File.separator));
+                        candidates.add(NArgCompleteCandidate.of(resultPath + java.io.File.separator));
                     }
                 }
             }

@@ -9,10 +9,7 @@ import net.thevpc.naru.api.task.NaruTask;
 import net.thevpc.naru.api.registry.NaruDirectiveCallContext;
 import net.thevpc.naru.api.registry.NaruDirectiveBase;
 import net.thevpc.naru.api.util.NaruUtils;
-import net.thevpc.nuts.cmdline.NArg;
-import net.thevpc.nuts.cmdline.NArgCandidate;
-import net.thevpc.nuts.cmdline.NCmdLine;
-import net.thevpc.nuts.cmdline.NCmdLineAutoCompleteResolver;
+import net.thevpc.nuts.cmdline.*;
 import net.thevpc.nuts.text.NMsg;
 import net.thevpc.nuts.text.NText;
 import net.thevpc.nuts.util.NBlankable;
@@ -56,8 +53,8 @@ public class NaruSessionDirective extends NaruDirectiveBase {
             }
 
             @Override
-            public List<NArgCandidate> resolveCandidates(NCmdLine cmdLine, NCmdLineAutoCompleteResolver.Pos pos, NaruSession session) {
-                List<NArgCandidate> candidates = new java.util.ArrayList<>();
+            public List<NArgCompleteCandidate> resolveCandidates(NCmdLine cmdLine, NArgCompletePos pos, NaruSession session) {
+                List<NArgCompleteCandidate> candidates = new java.util.ArrayList<>();
                 String[] stringArray = cmdLine.toStringArray();
                 int wordIndex = pos.wordIndex();
                 if (wordIndex == 2) {
@@ -90,8 +87,8 @@ public class NaruSessionDirective extends NaruDirectiveBase {
             }
 
             @Override
-            public List<NArgCandidate> resolveCandidates(NCmdLine cmdLine, NCmdLineAutoCompleteResolver.Pos pos, NaruSession session) {
-                List<NArgCandidate> candidates = new java.util.ArrayList<>();
+            public List<NArgCompleteCandidate> resolveCandidates(NCmdLine cmdLine, NArgCompletePos pos, NaruSession session) {
+                List<NArgCompleteCandidate> candidates = new java.util.ArrayList<>();
                 String[] stringArray = cmdLine.toStringArray();
                 int wordIndex = pos.wordIndex();
                 if (wordIndex == 2) {

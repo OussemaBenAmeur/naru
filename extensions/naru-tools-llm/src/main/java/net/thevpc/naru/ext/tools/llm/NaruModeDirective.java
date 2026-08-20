@@ -7,10 +7,7 @@ import net.thevpc.naru.api.mode.NaruPromptMode;
 import net.thevpc.naru.api.model.NaruMessage;
 import net.thevpc.naru.api.registry.NaruDirectiveCallContext;
 import net.thevpc.naru.api.registry.NaruDirectiveBase;
-import net.thevpc.nuts.cmdline.NArg;
-import net.thevpc.nuts.cmdline.NArgCandidate;
-import net.thevpc.nuts.cmdline.NCmdLine;
-import net.thevpc.nuts.cmdline.NCmdLineAutoCompleteResolver;
+import net.thevpc.nuts.cmdline.*;
 import net.thevpc.nuts.text.NMsg;
 import net.thevpc.nuts.text.NText;
 import net.thevpc.nuts.text.NTextBuilder;
@@ -54,14 +51,14 @@ public class NaruModeDirective extends NaruDirectiveBase {
             }
 
             @Override
-            public List<NArgCandidate> resolveCandidates(NCmdLine cmdLine, NCmdLineAutoCompleteResolver.Pos pos, NaruSession session) {
-                List<NArgCandidate> candidates = new ArrayList<>();
+            public List<NArgCompleteCandidate> resolveCandidates(NCmdLine cmdLine, NArgCompletePos pos, NaruSession session) {
+                List<NArgCompleteCandidate> candidates = new ArrayList<>();
                 String[] stringArray = cmdLine.toStringArray();
                 int wordIndex = pos.wordIndex();
                 if (wordIndex == 2) {
                     String currentArg = wordIndex < stringArray.length ? stringArray[wordIndex] : "";
                     if (cmdLine.get(1).isPresent() && cmdLine.get(1).get().image().equals("set")) {
-                        if (pos.inWordCursor() == 0) {
+                        if (pos.wordCursor() == 0) {
                             addCandidates(candidates, currentArg, session.registry().modeNames().toArray(new String[0]));
                         } else {
                             addCandidates(candidates, currentArg, session.registry().modeNamesAndAliases().toArray(new String[0]));

@@ -1,5 +1,8 @@
 package net.thevpc.naru.api.registry;
 
+import net.thevpc.nuts.cmdline.NArgCompleteCandidate;
+import net.thevpc.nuts.cmdline.NArgCompletePos;
+
 /**
  * A tool that can be called by the agent's reasoning model.
  *
@@ -34,9 +37,9 @@ public interface NaruDirective {
     /**
      * Resolve autocomplete candidates for this directive.
      */
-    default java.util.List<net.thevpc.nuts.cmdline.NArgCandidate> resolveCandidates(
+    default java.util.List<NArgCompleteCandidate> resolveCandidates(
             net.thevpc.nuts.cmdline.NCmdLine cmdLine,
-            net.thevpc.nuts.cmdline.NCmdLineAutoCompleteResolver.Pos pos,
+            NArgCompletePos pos,
             net.thevpc.naru.api.agent.NaruSession session) {
         return java.util.Collections.emptyList();
     }

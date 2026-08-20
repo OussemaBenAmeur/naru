@@ -11,7 +11,7 @@ import net.thevpc.naru.api.task.NaruTaskSpec;
 import net.thevpc.naru.api.registry.NaruRegistry;
 import net.thevpc.naru.impl.ia.budget.NaruMeteringServiceImpl;
 import net.thevpc.naru.api.util.NaruTerminalFormatter;
-import net.thevpc.naru.impl.cmdline.NaruNCmdLineAutoCompleteResolver;
+import net.thevpc.naru.impl.cmdline.NaruNArgCompleteResolver;
 import net.thevpc.naru.impl.util.StoredStringMap;
 import net.thevpc.nuts.artifact.NVersion;
 import net.thevpc.nuts.concurrent.NCallable;
@@ -267,7 +267,7 @@ public class NaruAgentImpl implements NaruAgent {
     private void enableRichTerm(NaruSession session) {
         NSystemTerminal.enableRichTerm();
         NIO.of().systemTerminal()
-                .commandAutoCompleteResolver(new NaruNCmdLineAutoCompleteResolver(session))
+                .commandAutoCompleteResolver(new NaruNArgCompleteResolver(session))
                 .commandHighlighter(new NaruTerminalFormatter(session))
         ;
     }

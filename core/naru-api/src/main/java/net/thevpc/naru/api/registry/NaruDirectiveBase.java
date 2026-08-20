@@ -3,10 +3,7 @@ package net.thevpc.naru.api.registry;
 import net.thevpc.naru.api.agent.NaruLogMode;
 import net.thevpc.naru.api.agent.NaruSession;
 import net.thevpc.naru.api.task.NaruTask;
-import net.thevpc.nuts.cmdline.NArg;
-import net.thevpc.nuts.cmdline.NArgCandidate;
-import net.thevpc.nuts.cmdline.NCmdLine;
-import net.thevpc.nuts.cmdline.NCmdLineAutoCompleteResolver;
+import net.thevpc.nuts.cmdline.*;
 import net.thevpc.nuts.text.NMsg;
 import net.thevpc.nuts.text.NText;
 import net.thevpc.nuts.util.NBlankable;
@@ -72,10 +69,10 @@ public abstract class NaruDirectiveBase implements NaruDirective {
         return description;
     }
 
-    protected void addCandidates(List<NArgCandidate> candidates, String prefix, String... options) {
+    protected void addCandidates(List<NArgCompleteCandidate> candidates, String prefix, String... options) {
         for (String option : options) {
             if (option.startsWith(prefix)) {
-                candidates.add(new net.thevpc.nuts.cmdline.DefaultNArgCandidate(option));
+                candidates.add(NArgCompleteCandidate.of(option));
             }
         }
     }
@@ -146,11 +143,11 @@ public abstract class NaruDirectiveBase implements NaruDirective {
     }
 
     @Override
-    public List<NArgCandidate> resolveCandidates(
+    public List<NArgCompleteCandidate> resolveCandidates(
             NCmdLine cmdLine,
-            NCmdLineAutoCompleteResolver.Pos pos,
+            NArgCompletePos pos,
             NaruSession session) {
-        List<NArgCandidate> candidates = new java.util.ArrayList<>();
+        List<NArgCompleteCandidate> candidates = new java.util.ArrayList<>();
         String[] stringArray = cmdLine.toStringArray();
         int wordIndex = pos.wordIndex();
         String currentArg = wordIndex < stringArray.length ? stringArray[wordIndex] : "";
@@ -227,7 +224,7 @@ public abstract class NaruDirectiveBase implements NaruDirective {
         }
 
         @Override
-        public List<NArgCandidate> resolveCandidates(NCmdLine cmdLine, NCmdLineAutoCompleteResolver.Pos pos, NaruSession session) {
+        public List<NArgCompleteCandidate> resolveCandidates(NCmdLine cmdLine, NArgCompletePos pos, NaruSession session) {
             return new ArrayList();
         }
     }
@@ -241,7 +238,7 @@ public abstract class NaruDirectiveBase implements NaruDirective {
 
         void help(NaruDirectiveCallContext context);
 
-        List<NArgCandidate> resolveCandidates(NCmdLine cmdLine, NCmdLineAutoCompleteResolver.Pos pos, NaruSession session);
+        List<NArgCompleteCandidate> resolveCandidates(NCmdLine cmdLine, NArgCompletePos pos, NaruSession session);
     }
 
 }

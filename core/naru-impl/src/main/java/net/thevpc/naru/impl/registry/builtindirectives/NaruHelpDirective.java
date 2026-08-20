@@ -8,9 +8,9 @@ import net.thevpc.naru.api.registry.NaruDirective;
 import net.thevpc.naru.api.registry.NaruDirectiveCallContext;
 import net.thevpc.naru.impl.registry.NaruDirectiveCallContextImpl;
 import net.thevpc.naru.impl.util.ImplNaruUtils;
-import net.thevpc.nuts.cmdline.NArgCandidate;
+import net.thevpc.nuts.cmdline.NArgCompleteCandidate;
+import net.thevpc.nuts.cmdline.NArgCompletePos;
 import net.thevpc.nuts.cmdline.NCmdLine;
-import net.thevpc.nuts.cmdline.NCmdLineAutoCompleteResolver;
 import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.text.NMsg;
 import net.thevpc.nuts.text.NText;
@@ -257,11 +257,11 @@ public class NaruHelpDirective extends NaruDirectiveBase {
     }
 
     @Override
-    public List<NArgCandidate> resolveCandidates(
+    public List<NArgCompleteCandidate> resolveCandidates(
             NCmdLine cmdLine,
-            NCmdLineAutoCompleteResolver.Pos pos,
+            NArgCompletePos pos,
             NaruSession session) {
-        List<NArgCandidate> candidates = new ArrayList<>();
+        List<NArgCompleteCandidate> candidates = new ArrayList<>();
         String[] args = cmdLine.toStringArray();
         int wordIndex = pos.wordIndex();
         String currentArg = wordIndex < args.length ? args[wordIndex] : "";
