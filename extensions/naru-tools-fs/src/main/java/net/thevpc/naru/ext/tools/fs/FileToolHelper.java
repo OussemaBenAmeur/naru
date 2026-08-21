@@ -160,7 +160,7 @@ public class FileToolHelper {
         if (from == null) return "ERROR: 'from' is required.";
 
         try {
-            List<String> lines = p.lines().stream().collect(Collectors.toList());
+            List<String> lines = p.lines().toList();
             int total = lines.size();
 
             int start = resolveIndex(from, total);
@@ -330,7 +330,7 @@ public class FileToolHelper {
         try {
             List<String> targetedLines;
             // Leverage native framework 0-based stream windowing
-            try (java.util.stream.Stream<String> stream = file.lines(from0, to0).stream()) {
+            try (java.util.stream.Stream<String> stream = file.lines(from0, to0).jstream()) {
                 targetedLines = stream.collect(Collectors.toList());
             }
 
