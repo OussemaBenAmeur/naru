@@ -377,8 +377,8 @@ public class NaruModelDirective extends NaruDirectiveBase {
         List<String> stop = new ArrayList<>();
 
         cmdLine.matcher()
-                .withNonOption()
-                .matchAny(a -> {
+                .whenNonOption()
+                .asArg(a -> {
                     if (a.getStringValue().isPresent()) {
                         if (aliasName.isNull() && modelName.isNull()) {
                             aliasName.set(a.key());
@@ -398,14 +398,14 @@ public class NaruModelDirective extends NaruDirectiveBase {
                         }
                     }
                 })
-                .with("--alias").matchEntry(a -> aliasName.set(a.asString().orNull()))
-                .with("--model").matchEntry(a -> modelName.set(a.asString().orNull()))
-                .with("--contextLength").matchEntry(a -> contextLength.set(NMemorySize.parse(a.value(), NMemoryUnit.BYTE).get().asBytes()))
-                .with("--temperature").matchEntry(a -> temperature.set(a.asFloat().orNull()))
-                .with("--nucleusThreshold").matchEntry(a -> nucleusThreshold.set(a.asFloat().orNull()))
-                .with("--candidateCount").matchEntry(a -> candidateCount.set(a.asInt().orNull()))
-                .with("--maxTokens").matchEntry(a -> maxTokens.set(a.asInt().orNull()))
-                .with("--stop").matchEntry(a -> stop.add(a.asString().orNull()))
+                .when("--alias").asEntry(a -> aliasName.set(a.asString().orNull()))
+                .when("--model").asEntry(a -> modelName.set(a.asString().orNull()))
+                .when("--contextLength").asEntry(a -> contextLength.set(NMemorySize.parse(a.value(), NMemoryUnit.BYTE).get().asBytes()))
+                .when("--temperature").asEntry(a -> temperature.set(a.asFloat().orNull()))
+                .when("--nucleusThreshold").asEntry(a -> nucleusThreshold.set(a.asFloat().orNull()))
+                .when("--candidateCount").asEntry(a -> candidateCount.set(a.asInt().orNull()))
+                .when("--maxTokens").asEntry(a -> maxTokens.set(a.asInt().orNull()))
+                .when("--stop").asEntry(a -> stop.add(a.asString().orNull()))
                 .requireAll();
         if (NBlankable.isBlank(aliasName.get())) {
             task.log(NaruLogMode.AGENT_RESPONSE, NMsg.ofC("Error: missing alias name to set.").asError());
@@ -456,8 +456,8 @@ public class NaruModelDirective extends NaruDirectiveBase {
         List<String> stop = new ArrayList<>();
 
         cmdLine.matcher()
-                .withNonOption()
-                .matchAny(a -> {
+                .whenNonOption()
+                .asArg(a -> {
                     if (a.getStringValue().isPresent()) {
                         if (aliasName.isNull() && modelName.isNull()) {
                             aliasName.set(a.key());
@@ -477,14 +477,14 @@ public class NaruModelDirective extends NaruDirectiveBase {
                         }
                     }
                 })
-                .with("--alias").matchEntry(a -> aliasName.set(a.asString().orNull()))
-                .with("--model").matchEntry(a -> modelName.set(a.asString().orNull()))
-                .with("--contextLength").matchEntry(a -> contextLength.set(a.asLong().orNull()))
-                .with("--temperature").matchEntry(a -> temperature.set(a.asFloat().orNull()))
-                .with("--nucleusThreshold").matchEntry(a -> nucleusThreshold.set(a.asFloat().orNull()))
-                .with("--candidateCount").matchEntry(a -> candidateCount.set(a.asInt().orNull()))
-                .with("--maxTokens").matchEntry(a -> maxTokens.set(a.asInt().orNull()))
-                .with("--stop").matchEntry(a -> stop.add(a.asString().orNull()))
+                .when("--alias").asEntry(a -> aliasName.set(a.asString().orNull()))
+                .when("--model").asEntry(a -> modelName.set(a.asString().orNull()))
+                .when("--contextLength").asEntry(a -> contextLength.set(a.asLong().orNull()))
+                .when("--temperature").asEntry(a -> temperature.set(a.asFloat().orNull()))
+                .when("--nucleusThreshold").asEntry(a -> nucleusThreshold.set(a.asFloat().orNull()))
+                .when("--candidateCount").asEntry(a -> candidateCount.set(a.asInt().orNull()))
+                .when("--maxTokens").asEntry(a -> maxTokens.set(a.asInt().orNull()))
+                .when("--stop").asEntry(a -> stop.add(a.asString().orNull()))
                 .requireAll();
         if (NBlankable.isBlank(aliasName.get())) {
             task.log(NaruLogMode.AGENT_RESPONSE, NMsg.ofC("Error: missing alias name to set.").asError());

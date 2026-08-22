@@ -51,14 +51,14 @@ public class NaruModeDirective extends NaruDirectiveBase {
             }
 
             @Override
-            public List<NArgCompleteCandidate> resolveCandidates(NCmdLine cmdLine, NArgCompletePos pos, NaruSession session) {
+            public List<NArgCompleteCandidate> resolveCandidates(NCmdLine cmdLine, NArgCompletePosition pos, NaruSession session) {
                 List<NArgCompleteCandidate> candidates = new ArrayList<>();
                 String[] stringArray = cmdLine.toStringArray();
                 int wordIndex = pos.wordIndex();
                 if (wordIndex == 2) {
                     String currentArg = wordIndex < stringArray.length ? stringArray[wordIndex] : "";
                     if (cmdLine.get(1).isPresent() && cmdLine.get(1).get().image().equals("set")) {
-                        if (pos.wordCursor() == 0) {
+                        if (pos.wordOffset() == 0) {
                             addCandidates(candidates, currentArg, session.registry().modeNames().toArray(new String[0]));
                         } else {
                             addCandidates(candidates, currentArg, session.registry().modeNamesAndAliases().toArray(new String[0]));

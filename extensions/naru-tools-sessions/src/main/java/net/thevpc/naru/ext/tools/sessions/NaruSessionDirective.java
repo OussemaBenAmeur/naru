@@ -53,7 +53,7 @@ public class NaruSessionDirective extends NaruDirectiveBase {
             }
 
             @Override
-            public List<NArgCompleteCandidate> resolveCandidates(NCmdLine cmdLine, NArgCompletePos pos, NaruSession session) {
+            public List<NArgCompleteCandidate> resolveCandidates(NCmdLine cmdLine, NArgCompletePosition pos, NaruSession session) {
                 List<NArgCompleteCandidate> candidates = new java.util.ArrayList<>();
                 String[] stringArray = cmdLine.toStringArray();
                 int wordIndex = pos.wordIndex();
@@ -87,7 +87,7 @@ public class NaruSessionDirective extends NaruDirectiveBase {
             }
 
             @Override
-            public List<NArgCompleteCandidate> resolveCandidates(NCmdLine cmdLine, NArgCompletePos pos, NaruSession session) {
+            public List<NArgCompleteCandidate> resolveCandidates(NCmdLine cmdLine, NArgCompletePosition pos, NaruSession session) {
                 List<NArgCompleteCandidate> candidates = new java.util.ArrayList<>();
                 String[] stringArray = cmdLine.toStringArray();
                 int wordIndex = pos.wordIndex();

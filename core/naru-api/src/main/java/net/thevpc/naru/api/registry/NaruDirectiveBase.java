@@ -145,7 +145,7 @@ public abstract class NaruDirectiveBase implements NaruDirective {
     @Override
     public List<NArgCompleteCandidate> resolveCandidates(
             NCmdLine cmdLine,
-            NArgCompletePos pos,
+            NArgCompletePosition pos,
             NaruSession session) {
         List<NArgCompleteCandidate> candidates = new java.util.ArrayList<>();
         String[] stringArray = cmdLine.toStringArray();
@@ -224,7 +224,7 @@ public abstract class NaruDirectiveBase implements NaruDirective {
         }
 
         @Override
-        public List<NArgCompleteCandidate> resolveCandidates(NCmdLine cmdLine, NArgCompletePos pos, NaruSession session) {
+        public List<NArgCompleteCandidate> resolveCandidates(NCmdLine cmdLine, NArgCompletePosition pos, NaruSession session) {
             return new ArrayList();
         }
     }
@@ -238,7 +238,7 @@ public abstract class NaruDirectiveBase implements NaruDirective {
 
         void help(NaruDirectiveCallContext context);
 
-        List<NArgCompleteCandidate> resolveCandidates(NCmdLine cmdLine, NArgCompletePos pos, NaruSession session);
+        List<NArgCompleteCandidate> resolveCandidates(NCmdLine cmdLine, NArgCompletePosition pos, NaruSession session);
     }
 
 }

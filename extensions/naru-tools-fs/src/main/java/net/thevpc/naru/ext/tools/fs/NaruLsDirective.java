@@ -47,18 +47,18 @@ public class NaruLsDirective extends NaruDirectiveBase {
                         : NCmdLine.parse(context.argument()).get().toStringArray());
 
                 args.matcher()
-                        .with("-a").matchTrueFlag(a -> optAll.set())
-                        .with("-A").matchTrueFlag(a -> optAlmost.set())
-                        .with("-l").matchTrueFlag(a -> optLong.set())
-                        .with("-d").matchTrueFlag(a -> optDirOnly.set())
-                        .with("-h").matchTrueFlag(a -> optHuman.set())
-                        .with("-r").matchTrueFlag(a -> optReverse.set())
-                        .with("-t").matchTrueFlag(a -> optSortTime.set())
-                        .with("-S").matchTrueFlag(a -> optSortSize.set())
-                        .with("-U").matchTrueFlag(a -> optNoSort.set())
-                        .with("-R").matchTrueFlag(a -> optRecursive.set())
-                        .with("-F").matchTrueFlag(a -> optClassify.set())
-                        .withNonOption().matchAny(a -> targets.add(a.image()))
+                        .when("-a").asTrueFlag(a -> optAll.set())
+                        .when("-A").asTrueFlag(a -> optAlmost.set())
+                        .when("-l").asTrueFlag(a -> optLong.set())
+                        .when("-d").asTrueFlag(a -> optDirOnly.set())
+                        .when("-h").asTrueFlag(a -> optHuman.set())
+                        .when("-r").asTrueFlag(a -> optReverse.set())
+                        .when("-t").asTrueFlag(a -> optSortTime.set())
+                        .when("-S").asTrueFlag(a -> optSortSize.set())
+                        .when("-U").asTrueFlag(a -> optNoSort.set())
+                        .when("-R").asTrueFlag(a -> optRecursive.set())
+                        .when("-F").asTrueFlag(a -> optClassify.set())
+                        .whenNonOption().asArg(a -> targets.add(a.image()))
                         .requireAll();
 
                 NPath baseDir = task.workingDir();

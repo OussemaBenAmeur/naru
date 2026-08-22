@@ -23,7 +23,7 @@ public class NaruStartDirective extends NaruDirectiveBase {
                 NaruTask task = context.task();
                 List<String> li = new ArrayList<>();
                 cmdLine.matcher()
-                        .withNonOption().matchAny(a -> {
+                        .whenNonOption().asArg(a -> {
                             String s = a.image();
                             NaruRoutine rtn;
                             rtn = task.session().routine(s, task,false).orNull();

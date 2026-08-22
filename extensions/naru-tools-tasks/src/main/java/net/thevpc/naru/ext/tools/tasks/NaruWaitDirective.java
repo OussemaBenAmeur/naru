@@ -31,8 +31,8 @@ public class NaruWaitDirective extends NaruDirectiveBase {
                 NRef<String> eventName = NRef.of();
                 NRef<String> fromFilter = NRef.of();
                 cmdLine.matcher()
-                        .with("--for").matchEntry(x -> eventName.set(x.stringValue()))
-                        .with("--from").matchEntry(x -> fromFilter.set(x.stringValue()))
+                        .when("--for").asEntry(x -> eventName.set(x.stringValue()))
+                        .when("--from").asEntry(x -> fromFilter.set(x.stringValue()))
                         .requireAll();
                 NOptional<NaruEventFilter> f = NaruEventFilters.parse(fromFilter.get(),
                         NStringUtils.firstNonBlankStripped(eventName.get(), NaruEvent.TASK_TERMINATED),

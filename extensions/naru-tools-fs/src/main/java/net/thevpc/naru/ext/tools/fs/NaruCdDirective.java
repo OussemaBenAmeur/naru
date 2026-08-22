@@ -32,7 +32,7 @@ public class NaruCdDirective extends NaruDirectiveBase {
     @Override
     public List<NArgCompleteCandidate> resolveCandidates(
             NCmdLine cmdLine,
-            NArgCompletePos pos,
+            NArgCompletePosition pos,
             NaruSession session) {
         List<NArgCompleteCandidate> candidates = new java.util.ArrayList<>();
         String[] stringArray = cmdLine.toStringArray();

@@ -40,10 +40,10 @@ public class NaruCatDirective extends NaruDirectiveBase {
                         : NCmdLine.parse(context.argument()).get().toStringArray());
 
                 args.matcher()
-                        .with("-n", "--line-numbers").matchTrueFlag(a -> optLineNumbers.set())
-                        .with("-l", "--lang").matchEntry(a -> optLang.set(a.stringValue()))
-                        .with("-L").matchFlag(a -> optLang.set("auto"))
-                        .withNonOption().matchAny(a -> targets.add(a.image()))
+                        .when("-n", "--line-numbers").asTrueFlag(a -> optLineNumbers.set())
+                        .when("-l", "--lang").asEntry(a -> optLang.set(a.stringValue()))
+                        .when("-L").asFlag(a -> optLang.set("auto"))
+                        .whenNonOption().asArg(a -> targets.add(a.image()))
                         .requireAll();
 
                 NPath baseDir = task.workingDir();

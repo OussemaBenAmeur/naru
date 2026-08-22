@@ -1,7 +1,7 @@
 package net.thevpc.naru.api.registry;
 
 import net.thevpc.nuts.cmdline.NArgCompleteCandidate;
-import net.thevpc.nuts.cmdline.NArgCompletePos;
+import net.thevpc.nuts.cmdline.NArgCompletePosition;
 
 /**
  * A tool that can be called by the agent's reasoning model.
@@ -39,7 +39,7 @@ public interface NaruDirective {
      */
     default java.util.List<NArgCompleteCandidate> resolveCandidates(
             net.thevpc.nuts.cmdline.NCmdLine cmdLine,
-            NArgCompletePos pos,
+            NArgCompletePosition pos,
             net.thevpc.naru.api.agent.NaruSession session) {
         return java.util.Collections.emptyList();
     }

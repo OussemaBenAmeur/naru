@@ -22,7 +22,7 @@ public class NaruSourceDirective extends NaruDirectiveBase {
                 NaruTask task = context.task();
                 List<List<NaruStatement>> li = new ArrayList<>();
                 cmdLine.matcher()
-                        .withNonOption().matchAny(a->{
+                        .whenNonOption().asArg(a->{
                             String s = a.image();
                             NaruRoutine rtn;
                             rtn = task.session().routine(s, task,false).orNull();

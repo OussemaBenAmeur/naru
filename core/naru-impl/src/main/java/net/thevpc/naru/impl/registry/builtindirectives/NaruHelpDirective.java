@@ -9,7 +9,7 @@ import net.thevpc.naru.api.registry.NaruDirectiveCallContext;
 import net.thevpc.naru.impl.registry.NaruDirectiveCallContextImpl;
 import net.thevpc.naru.impl.util.ImplNaruUtils;
 import net.thevpc.nuts.cmdline.NArgCompleteCandidate;
-import net.thevpc.nuts.cmdline.NArgCompletePos;
+import net.thevpc.nuts.cmdline.NArgCompletePosition;
 import net.thevpc.nuts.cmdline.NCmdLine;
 import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.text.NMsg;
@@ -75,11 +75,11 @@ public class NaruHelpDirective extends NaruDirectiveBase {
         Options o = new Options();
         if (!cmdLine.isEmpty()) {
             cmdLine.matcher()
-                    .with("--full", "-f").matchFlag(a -> o.full = a.booleanValue())
-                    .with("--syntax", "-s").matchFlag(a -> o.syntax = a.booleanValue())
-                    .with("--examples", "-E").matchFlag(a -> o.examplesList = a.booleanValue())
-                    .with("--example", "-e").matchEntry(a -> o.targetedExample = a.stringValue())
-                    .withNonOption().matchAny(a -> o.args.add(a.image()))
+                    .when("--full", "-f").asFlag(a -> o.full = a.booleanValue())
+                    .when("--syntax", "-s").asFlag(a -> o.syntax = a.booleanValue())
+                    .when("--examples", "-E").asFlag(a -> o.examplesList = a.booleanValue())
+                    .when("--example", "-e").asEntry(a -> o.targetedExample = a.stringValue())
+                    .whenNonOption().asArg(a -> o.args.add(a.image()))
                     .requireAll();
         }
 
@@ -259,7 +259,7 @@ public class NaruHelpDirective extends NaruDirectiveBase {
     @Override
     public List<NArgCompleteCandidate> resolveCandidates(
             NCmdLine cmdLine,
-            NArgCompletePos pos,
+            NArgCompletePosition pos,
             NaruSession session) {
         List<NArgCompleteCandidate> candidates = new ArrayList<>();
         String[] args = cmdLine.toStringArray();

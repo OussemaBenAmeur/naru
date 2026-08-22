@@ -216,10 +216,10 @@ public class NaruRoutineDirective extends NaruDirectiveBase {
                 NRef<Integer> increment = NRef.of(0);
                 NRef<NaruRoutine> r = NRef.of(task.editRoutine().get());
                 cmdLine.matcher()
-                        .with("--start").matchEntry(a -> start.set(a.intValue()))
-                        .with("--inc").matchEntry(a -> increment.set(a.intValue()))
-                        .with("--routine").matchEntry(a -> r.set(context.task().session().routine(a.stringValue(), context.task(), true).get()))
-                        .withNonOption().matchAny(a -> r.set(context.task().session().routine(a.image(), context.task(), true).get()))
+                        .when("--start").asEntry(a -> start.set(a.intValue()))
+                        .when("--inc").asEntry(a -> increment.set(a.intValue()))
+                        .when("--routine").asEntry(a -> r.set(context.task().session().routine(a.stringValue(), context.task(), true).get()))
+                        .whenNonOption().asArg(a -> r.set(context.task().session().routine(a.image(), context.task(), true).get()))
                         .requireAll();
                 RoutinesToolHelper.renum(start.get(), increment.get(), r.get());
                 task.log(NaruLogMode.AGENT_RESPONSE, NMsg.ofC("Renum routine: %s", r.get().name()));

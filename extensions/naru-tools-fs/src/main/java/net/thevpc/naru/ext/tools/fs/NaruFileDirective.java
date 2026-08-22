@@ -27,8 +27,8 @@ public class NaruFileDirective extends NaruDirectiveBase {
                 NRef<Long> from = NRef.of();
                 NRef<Long> to = NRef.of();
                 cmdLine.matcher()
-                        .with("--from", "from").matchEntry(a -> from.set(a.longValue()))
-                        .with("--to", "to").matchEntry(a -> to.set(a.longValue()))
+                        .when("--from", "from").asEntry(a -> from.set(a.longValue()))
+                        .when("--to", "to").asEntry(a -> to.set(a.longValue()))
                         .requireAll();
                 String result = FileToolHelper.fileRead(task, filePath.toString(),
                         from.get(), to.get()
@@ -53,9 +53,9 @@ public class NaruFileDirective extends NaruDirectiveBase {
                 NRef<String> content = NRef.of();
                 NRef<Boolean> dry = NRef.of();
                 cmdLine.matcher()
-                        .with("--content", "content").matchEntry(a -> content.set(a.image()))
-                        .with("--dry").matchFlag(a -> dry.set(a.booleanValue()))
-                        .withNonOption().matchAny(a -> content.set(a.image()))
+                        .when("--content", "content").asEntry(a -> content.set(a.image()))
+                        .when("--dry").asFlag(a -> dry.set(a.booleanValue()))
+                        .whenNonOption().asArg(a -> content.set(a.image()))
                         .requireAll();
                 if (content.get() == null) {
                     task.throwError(NMsg.ofC("missing file content"));
@@ -86,10 +86,10 @@ public class NaruFileDirective extends NaruDirectiveBase {
                 NRef<String> content = NRef.of();
                 NRef<Boolean> dry = NRef.of();
                 cmdLine.matcher()
-                        .with("--from", "from").matchEntry(a -> from.set(a.longValue()))
-                        .with("--to", "to").matchEntry(a -> to.set(a.longValue()))
-                        .with("--content", "content").matchEntry(a -> content.set(a.image()))
-                        .with("--dry").matchFlag(a -> dry.set(a.booleanValue()))
+                        .when("--from", "from").asEntry(a -> from.set(a.longValue()))
+                        .when("--to", "to").asEntry(a -> to.set(a.longValue()))
+                        .when("--content", "content").asEntry(a -> content.set(a.image()))
+                        .when("--dry").asFlag(a -> dry.set(a.booleanValue()))
                         .requireAll();
                 String result = FileToolHelper.fileEdit(task, filePath.toString(),
                         from.get(),
@@ -119,10 +119,10 @@ public class NaruFileDirective extends NaruDirectiveBase {
                 NRef<String> content = NRef.of();
                 NRef<Boolean> dry = NRef.of();
                 cmdLine.matcher()
-                        .with("--from", "from").matchEntry(a -> from.set(a.longValue()))
-                        .with("--to", "to").matchEntry(a -> to.set(a.longValue()))
-                        .with("--content", "content").matchEntry(a -> content.set(a.image()))
-                        .with("--dry").matchFlag(a -> dry.set(a.booleanValue()))
+                        .when("--from", "from").asEntry(a -> from.set(a.longValue()))
+                        .when("--to", "to").asEntry(a -> to.set(a.longValue()))
+                        .when("--content", "content").asEntry(a -> content.set(a.image()))
+                        .when("--dry").asFlag(a -> dry.set(a.booleanValue()))
                         .requireAll();
 
                 String result = FileToolHelper.fileEdit(task,
@@ -156,12 +156,12 @@ public class NaruFileDirective extends NaruDirectiveBase {
                 NRef<Boolean> regex = NRef.of();
                 NRef<Boolean> caseSensitive = NRef.of();
                 cmdLine.matcher()
-                        .with("--context-lines", "context-lines").matchEntry(a -> contextLines.set(a.intValue()))
-                        .with("--max-matches", "max").matchEntry(a -> maxMatches.set(a.intValue()))
-                        .with("--pattern", "pattern").matchEntry(a -> pattern.set(a.image()))
-                        .with("--regex", "-e").matchFlag(a -> regex.set(a.booleanValue()))
-                        .with("--case-sensitive").matchFlag(a -> regex.set(a.booleanValue()))
-                        .with("-i").matchFlag(a -> caseSensitive.set(!a.booleanValue()))
+                        .when("--context-lines", "context-lines").asEntry(a -> contextLines.set(a.intValue()))
+                        .when("--max-matches", "max").asEntry(a -> maxMatches.set(a.intValue()))
+                        .when("--pattern", "pattern").asEntry(a -> pattern.set(a.image()))
+                        .when("--regex", "-e").asFlag(a -> regex.set(a.booleanValue()))
+                        .when("--case-sensitive").asFlag(a -> regex.set(a.booleanValue()))
+                        .when("-i").asFlag(a -> caseSensitive.set(!a.booleanValue()))
                         .requireAll();
 
                 String result = FileToolHelper.fileGrep(task,
@@ -205,18 +205,18 @@ public class NaruFileDirective extends NaruDirectiveBase {
                 NRef<Boolean> recursive = NRef.of();
                 NRef<Boolean> caseSensitive = NRef.of();
                 cmdLine.matcher()
-                        .with("--context-lines", "context-lines").matchEntry(a -> contextLines.set(a.intValue()))
-                        .with("--max-matches", "max").matchEntry(a -> maxMatches.set(a.intValue()))
-                        .with("--max-files", "max").matchEntry(a -> maxFiles.set(a.intValue()))
-                        .with("--pattern", "pattern").matchEntry(a -> pattern.set(a.image()))
-                        .with("--regex", "-e").matchFlag(a -> regex.set(a.booleanValue()))
-                        .with("--case-sensitive").matchFlag(a -> regex.set(a.booleanValue()))
-                        .with("--recursive","-r").matchFlag(a -> recursive.set(a.booleanValue()))
-                        .with("--include").matchEntry(a -> includeGlob.set(a.stringValue()))
-                        .with("--exclude").matchEntry(a -> excludeGlob.set(a.stringValue()))
-                        .with("--before").matchEntry(a -> includeGlob.set(a.stringValue()))
-                        .with("--after").matchEntry(a -> excludeGlob.set(a.stringValue()))
-                        .with("-i").matchFlag(a -> caseSensitive.set(!a.booleanValue()))
+                        .when("--context-lines", "context-lines").asEntry(a -> contextLines.set(a.intValue()))
+                        .when("--max-matches", "max").asEntry(a -> maxMatches.set(a.intValue()))
+                        .when("--max-files", "max").asEntry(a -> maxFiles.set(a.intValue()))
+                        .when("--pattern", "pattern").asEntry(a -> pattern.set(a.image()))
+                        .when("--regex", "-e").asFlag(a -> regex.set(a.booleanValue()))
+                        .when("--case-sensitive").asFlag(a -> regex.set(a.booleanValue()))
+                        .when("--recursive","-r").asFlag(a -> recursive.set(a.booleanValue()))
+                        .when("--include").asEntry(a -> includeGlob.set(a.stringValue()))
+                        .when("--exclude").asEntry(a -> excludeGlob.set(a.stringValue()))
+                        .when("--before").asEntry(a -> includeGlob.set(a.stringValue()))
+                        .when("--after").asEntry(a -> excludeGlob.set(a.stringValue()))
+                        .when("-i").asFlag(a -> caseSensitive.set(!a.booleanValue()))
                         .requireAll();
 
                 String result = FileToolHelper.folderFind(task,

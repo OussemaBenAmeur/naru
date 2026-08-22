@@ -51,11 +51,11 @@ public class NaruCmdLineProcessor {
     private void parse(NCmdLine args) {
         args
                 .matcher()
-                .with("--tasks", "-t").matchEntry(a -> precommands.add(a.value()))
-                .with("--file", "-f").matchEntry(a -> precommands.add("/source "+a.value()))
-                .with("--interactive", "-i").matchFlag(a -> forceInteractive = a.booleanValue())
-                .with("--project","-d").matchEntry(a -> projectDir = a.value())
-                .with("--help", "-h").matchTrueFlag(a -> help = a.booleanValue())
+                .when("--tasks", "-t").asEntry(a -> precommands.add(a.value()))
+                .when("--file", "-f").asEntry(a -> precommands.add("/source "+a.value()))
+                .when("--interactive", "-i").asFlag(a -> forceInteractive = a.booleanValue())
+                .when("--project","-d").asEntry(a -> projectDir = a.value())
+                .when("--help", "-h").asTrueFlag(a -> help = a.booleanValue())
                 .withDefaults()
                 .requireAll();
     }

@@ -20,7 +20,7 @@ public class NaruNArgCompleteResolver implements NArgCompleteResolver {
     }
 
     @Override
-    public NArgCompleteResult resolveCandidates(NCmdLine cmdLine, NArgCompletePos pos) {
+    public NArgCompleteResult resolveCandidates(NCmdLine cmdLine, NArgCompletePosition pos) {
         List<NArgCompleteCandidate> candidates = new ArrayList<>();
         String[] stringArray = cmdLine.toStringArray();
         int wordIndex = pos.wordIndex();
