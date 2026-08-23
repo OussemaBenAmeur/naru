@@ -88,7 +88,7 @@ public class NaruRetentionPolicies {
                             if(r.isPresent()){
                                 ch.add(r.get());
                             }else{
-                                return NOptional.ofError(r.getMessage());
+                                return NOptional.ofError(r.message());
                             }
                         }
                         return NOptional.of(and(ch.toArray(NaruRetentionPolicy[]::new)));
@@ -102,7 +102,7 @@ public class NaruRetentionPolicies {
                             if(r.isPresent()){
                                 ch.add(r.get());
                             }else{
-                                return NOptional.ofError(r.getMessage());
+                                return NOptional.ofError(r.message());
                             }
                         }
                         return NOptional.of(or(ch.toArray(NaruRetentionPolicy[]::new)));

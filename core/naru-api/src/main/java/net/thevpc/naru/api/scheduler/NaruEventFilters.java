@@ -128,7 +128,7 @@ public class NaruEventFilters {
                             if (r.isPresent()) {
                                 ch.add(r.get());
                             } else {
-                                return NOptional.ofError(r.getMessage());
+                                return NOptional.ofError(r.message());
                             }
                         }
                         return NOptional.of(and(ch.toArray(NaruEventFilter[]::new)));
@@ -142,7 +142,7 @@ public class NaruEventFilters {
                             if (r.isPresent()) {
                                 ch.add(r.get());
                             } else {
-                                return NOptional.ofError(r.getMessage());
+                                return NOptional.ofError(r.message());
                             }
                         }
                         return NOptional.of(or(ch.toArray(NaruEventFilter[]::new)));

@@ -38,7 +38,7 @@ public class NaruWaitDirective extends NaruDirectiveBase {
                         NStringUtils.firstNonBlankStripped(eventName.get(), NaruEvent.TASK_TERMINATED),
                         context.task());
                 if (f.isNotPresent()) {
-                    task.throwError(f.getMessage().get());
+                    task.throwError(f.message().get());
                     return;
                 }
                 task.awaitFilter(f.get());

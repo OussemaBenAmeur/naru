@@ -52,7 +52,7 @@ public class NaruFireDirective extends NaruDirectiveBase {
                             case "--to": {
                                 NOptional<NaruEventTarget> oo = NaruEventTargets.parse(a.value(), task);
                                 if (oo.isNotPresent()) {
-                                    task.throwError(NMsg.ofC("Error on event: event %s : %s", event, oo.getMessage().get()));
+                                    task.throwError(NMsg.ofC("Error on event: event %s : %s", event, oo.message().get()));
                                     return;
                                 }
                                 target = NaruEventTargets.or(target, oo.get());
@@ -61,7 +61,7 @@ public class NaruFireDirective extends NaruDirectiveBase {
                             case "--keep": {
                                 NOptional<NaruRetentionPolicy> oo = NaruRetentionPolicies.parse(a.value(), task);
                                 if (oo.isNotPresent()) {
-                                    task.throwError(NMsg.ofC("Error on event: event %s : %s", event, oo.getMessage().get()));
+                                    task.throwError(NMsg.ofC("Error on event: event %s : %s", event, oo.message().get()));
                                     return;
                                 }
                                 policy = NaruRetentionPolicies.or(policy, oo.get());

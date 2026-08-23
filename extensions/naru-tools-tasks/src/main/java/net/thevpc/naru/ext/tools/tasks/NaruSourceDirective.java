@@ -32,7 +32,7 @@ public class NaruSourceDirective extends NaruDirectiveBase {
                             }
                             NOptional<List<NaruStatement>> ll = rtn.parseStatements(task);
                             if (!ll.isPresent()) {
-                                task.throwError(ll.getMessage().get());
+                                task.throwError(ll.message().get());
                                 return;
                             }
                             li.add(ll.get());

@@ -94,7 +94,7 @@ public class NaruEventTargets {
                             if (r.isPresent()) {
                                 ch.add(r.get());
                             } else {
-                                return NOptional.ofError(r.getMessage());
+                                return NOptional.ofError(r.message());
                             }
                         }
                         return NOptional.of(new AndNaruEventTarget(ch));
@@ -108,7 +108,7 @@ public class NaruEventTargets {
                             if (r.isPresent()) {
                                 ch.add(r.get());
                             } else {
-                                return NOptional.ofError(r.getMessage());
+                                return NOptional.ofError(r.message());
                             }
                         }
                         return NOptional.of(new OrNaruEventTarget(ch));
