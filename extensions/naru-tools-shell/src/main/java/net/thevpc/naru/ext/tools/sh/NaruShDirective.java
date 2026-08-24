@@ -3,7 +3,6 @@ package net.thevpc.naru.ext.tools.sh;
 import net.thevpc.naru.api.task.NaruTask;
 import net.thevpc.naru.api.registry.NaruDirectiveCallContext;
 import net.thevpc.naru.api.registry.NaruDirectiveBase;
-import net.thevpc.naru.api.util.NaruUtils;
 import net.thevpc.nuts.cmdline.NCmdLine;
 import net.thevpc.nuts.command.NExec;
 import net.thevpc.nuts.core.NSession;
@@ -20,7 +19,7 @@ public class NaruShDirective extends NaruDirectiveBase {
             public void execute(NaruDirectiveCallContext context, NCmdLine cmdLine) {
                 NaruTask task = context.task();
                 try (NSession session = NSession.of().copy()) {
-                    session.setLogTermLevel(Level.OFF);
+                    session.logTermLevel(Level.OFF);
                     session.runWith(() -> {
                         NExec e = NExec.of("nsh","--progress=none", "-c", context.argument()).directory(task.workingDir()).failFast(false);
                         String result = e

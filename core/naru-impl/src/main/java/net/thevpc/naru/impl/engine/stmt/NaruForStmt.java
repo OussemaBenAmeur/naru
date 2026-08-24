@@ -118,14 +118,14 @@ public class NaruForStmt extends NaruIncrementalStmt implements Cloneable {
         // Phase A: First Pass Initialization
         if (runtimeIterator == null) {
             NExprContext ectx = task.expressionBuilder()
-                    .declareOperator(":", NExprOpType.INFIX, NExprOpPrecedence.ASSIGN - 1, NOperatorAssociativity.LEFT, new NExprCallHandler() {
+                    .declareOperator(":", NFixity.INFIX, NExprOpPrecedence.ASSIGN - 1, NOperatorAssociativity.LEFT, new NExprCallHandler() {
                         @Override
                         public Object eval(NExprCallContext callContext) {
                             // just needed for parsing
                             throw new UnsupportedOperationException("not supported.");
                         }
                     })
-                    .declareOperator("..", NExprOpType.INFIX, NExprOpPrecedence.ASSIGN, NOperatorAssociativity.LEFT, new NExprCallHandler() {
+                    .declareOperator("..", NFixity.INFIX, NExprOpPrecedence.ASSIGN, NOperatorAssociativity.LEFT, new NExprCallHandler() {
                         @Override
                         public Object eval(NExprCallContext callContext) {
                             // just needed for parsing

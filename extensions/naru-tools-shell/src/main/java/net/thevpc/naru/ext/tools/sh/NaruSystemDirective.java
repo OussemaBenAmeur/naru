@@ -5,7 +5,6 @@ import net.thevpc.naru.api.task.NaruTask;
 import net.thevpc.naru.api.model.NaruMessage;
 import net.thevpc.naru.api.registry.NaruDirectiveCallContext;
 import net.thevpc.naru.api.registry.NaruDirectiveBase;
-import net.thevpc.naru.api.util.NaruUtils;
 import net.thevpc.nuts.cmdline.NCmdLine;
 import net.thevpc.nuts.command.NExec;
 import net.thevpc.nuts.core.NSession;
@@ -25,7 +24,7 @@ public class NaruSystemDirective extends NaruDirectiveBase {
                 NaruTask task = context.task();
                 boolean grab=false;
                 try (NSession session = NSession.of().copy()) {
-                    session.setLogTermLevel(Level.OFF);
+                    session.logTermLevel(Level.OFF);
                     session.runWith(() -> {
                         NExec e = null;
                         if (NEnv.of().osFamily() == NOsFamily.WINDOWS) {

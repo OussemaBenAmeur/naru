@@ -1,9 +1,9 @@
 package net.thevpc.naru;
 
 import net.thevpc.naru.impl.cmdline.NaruCmdLineProcessor;
+import net.thevpc.nuts.app.NApplication;
 import net.thevpc.nuts.app.NApp;
-import net.thevpc.nuts.app.NAppDefinition;
-import net.thevpc.nuts.app.NAppRunner;
+import net.thevpc.nuts.app.NAppRun;
 
 /**
  * NARU — Nuts AI Reasoning Unit.
@@ -18,16 +18,16 @@ import net.thevpc.nuts.app.NAppRunner;
  *   java -jar naru.jar --task "Fix the bug in MyApp.java" --project-dir ./my-app
  * </pre>
  */
-@NAppDefinition
+@NApp
 public class NaruApp {
 
     public static void main(String[] args) {
-        NApp.builder(args).run();
+        NApplication.builder(args).run();
     }
 
-    @NAppRunner
+    @NAppRun
     public void run() {
-        new NaruCmdLineProcessor(NApp.of().cmdLine()).run();
+        new NaruCmdLineProcessor(NApplication.of().cmdLine()).run();
     }
 }
 
