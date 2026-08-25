@@ -18,9 +18,9 @@ import net.thevpc.nuts.util.NIllegalArgumentException;
 import net.thevpc.nuts.util.NLiteral;
 
 import java.time.Instant;
-import java.util.*;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 
 public class NaruModelProtocolMistral extends NaruModelProtocolOpenAICompat {
@@ -28,31 +28,13 @@ public class NaruModelProtocolMistral extends NaruModelProtocolOpenAICompat {
             "EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH
     );
 
-    public NaruModelProtocolMistral(NaruModelProvider provider, NaruModelConfig model, String baseUrl, NaruModelCapabilities capabilities) {
-        super(provider, model, baseUrl, "chat/completions", capabilities);
-    }
-
-    @Override
-    public String url(NaruTask task, Map<String, NElement> env) {
-        // Mistral's native endpoint
-        String url = task.session().agent().env().get(configPrefix + ".url")
-                .flatMap(x -> x.asStringValue())
-                .orElse("https://api.mistral.ai/v1");
-        return url.replaceAll("/$", "");
-    }
-
-    private String apiKeyConfigKey() {
-        return configPrefix + ".apiKey";
+    public NaruModelProtocolMistral(NaruModelProvider provider, NaruModelConfig model, String configPrefix, NaruModelCapabilities capabilities) {
+        super(provider, model, configPrefix, "chat/completions", capabilities, "https://api.mistral.ai/v1");
     }
 
     @Override
     public NaruResponse chat(NaruModelRequest naruModelRequest, NaruTask task) {
-        // Retrieve the API Key safely from the Naru Environment
-        String apiKey = task.session().agent().env().get(apiKeyConfigKey())
-                .flatMap(x -> x.asStringValue())
-                .orElseThrow(() -> new NIllegalArgumentException(
-                        NMsg.ofC("Missing required Mistral API Key configuration: %s", apiKeyConfigKey())
-                ));
+        // Mistral requires strict role alternation; sanitize before serializing
         NaruModelRequest sanitizedRequest = sanitizeRequest(naruModelRequest);
         // Use the inherited robust OpenAI-compatible payload builder
         NElement body = serializer.serialize(sanitizedRequest, model, task.session());
@@ -63,7 +45,7 @@ public class NaruModelProtocolMistral extends NaruModelProtocolOpenAICompat {
 
         // Route calls using the configured bearer token header style
         NWebRequest request = http.POST(chatPath)
-                .header("Authorization", "Bearer " + apiKey)
+                .header("Authorization", "Bearer " + apiKey(task))
                 .timeout(readTimeout(task, env))
                 .jsonRequestBody(body);
 

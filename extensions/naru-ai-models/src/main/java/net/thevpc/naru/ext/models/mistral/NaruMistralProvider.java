@@ -1,22 +1,12 @@
 package net.thevpc.naru.ext.models.mistral;
 
-
-import net.thevpc.naru.api.agent.NaruSession;
-import net.thevpc.naru.api.model.AbstractNaruModelProvider;
 import net.thevpc.naru.api.model.NaruModelCapabilities;
 import net.thevpc.naru.api.model.NaruModelConfig;
 import net.thevpc.naru.api.model.NaruModelProtocol;
 import net.thevpc.naru.ext.models.NaruModelCapabilitiesImpl;
-import net.thevpc.nuts.text.NMsg;
-import net.thevpc.nuts.util.NBlankable;
-import net.thevpc.nuts.util.NOptional;
+import net.thevpc.naru.ext.models.openapi.AbstractOpenAICompatProvider;
 
-import java.util.*;
-
-public class NaruMistralProvider extends AbstractNaruModelProvider {
-
-    private final Map<NaruModelConfig, NaruModelProtocol> protocols = new HashMap<>();
-    private final List<String> supportedModels = new ArrayList<>();
+public class NaruMistralProvider extends AbstractOpenAICompatProvider {
 
     public NaruMistralProvider() {
         super("mistral");
@@ -28,36 +18,20 @@ public class NaruMistralProvider extends AbstractNaruModelProvider {
     }
 
     @Override
-    public NOptional<NaruModelProtocol> getProtocol(NaruModelConfig model, NaruSession session) {
-        if (!model.provider().equals(name())) {
-            return NOptional.ofNamedEmpty(NMsg.ofC("protocol for %s", model));
-        }
-
-        NaruModelCapabilities capabilities = getStaticCapabilities(model.model());
-        return NOptional.of(protocols.computeIfAbsent(model,
-                k -> new NaruModelProtocolMistral(NaruMistralProvider.this,model, name(), capabilities)
-        ));
-    }
-
-    private String apiKeyConfigKey() {
-        return name() + ".apiKey";
+    protected String defaultBaseUrl() {
+        return "https://api.mistral.ai/v1";
     }
 
     @Override
-    public List<String> findModelIds(NaruSession session) {
-        String apiKey = session.agent().env().get(apiKeyConfigKey())
-                .flatMap(x -> x.asStringValue())
-                .orNull();
-        if (NBlankable.isBlank(apiKey)) {
-            return Collections.emptyList();
-        }
-        return new ArrayList<>(supportedModels);
+    protected NaruModelProtocol createProtocol(NaruModelConfig model, NaruModelCapabilities capabilities) {
+        return new NaruModelProtocolMistral(this, model, name(), capabilities);
     }
 
     /**
      * Statically maps model limits since cloud-hosted capabilities cannot be polled natively.
      */
-    private NaruModelCapabilities getStaticCapabilities(String modelName) {
+    @Override
+    protected NaruModelCapabilities resolveCapabilities(String modelName) {
         boolean vision = modelName.contains("small-4") || modelName.contains("medium-3.5");
         boolean tools = true;
         boolean thinking = modelName.contains("medium");

@@ -1,27 +1,16 @@
 package net.thevpc.naru.ext.models.gemini;
 
-import net.thevpc.naru.api.agent.NaruSession;
-import net.thevpc.naru.api.model.AbstractNaruModelProvider;
 import net.thevpc.naru.api.model.NaruModelCapabilities;
-import net.thevpc.naru.api.model.NaruModelConfig;
-import net.thevpc.naru.api.model.NaruModelProtocol;
 import net.thevpc.naru.ext.models.NaruModelCapabilitiesImpl;
-import net.thevpc.nuts.text.NMsg;
-import net.thevpc.nuts.util.NBlankable;
-import net.thevpc.nuts.util.NOptional;
-
-import java.util.*;
+import net.thevpc.naru.ext.models.openapi.AbstractOpenAICompatProvider;
 
 /**
- * Ollama provider — talks to a local (or remote) Ollama server via REST.
+ * Gemini provider — talks to Google AI Studio through the OpenAI-compatible router.
  *
- * <p>Endpoint: POST {baseUrl}/api/chat
- * <p>Compatible with Ollama 0.2.8+ tool-calling format.
+ * <p>Endpoint: POST {baseUrl}/chat/completions
+ * <p>Default baseUrl: https://generativelence.googleapis.com/v1beta/openai
  */
-public class NaruGeminiProvider extends AbstractNaruModelProvider {
-
-    private final Map<NaruModelConfig, NaruModelProtocol> protocols = new HashMap<>();
-    private final List<String> supportedModels = new ArrayList<>();
+public class NaruGeminiProvider extends AbstractOpenAICompatProvider {
 
     public NaruGeminiProvider() {
         super("gemini");
@@ -33,35 +22,15 @@ public class NaruGeminiProvider extends AbstractNaruModelProvider {
     }
 
     @Override
-    public NOptional<NaruModelProtocol> getProtocol(NaruModelConfig model, NaruSession session) {
-        if (!model.provider().equals(name())) {
-            return NOptional.ofNamedEmpty(NMsg.ofC("protocol for %s", model));
-        }
-
-        NaruModelCapabilities capabilities = getStaticCapabilities(model.model());
-        return NOptional.of(protocols.computeIfAbsent(model,
-                k -> new NaruModelProtocolGemini(NaruGeminiProvider.this,model, name(), capabilities)
-        ));
-    }
-    private String apiKeyConfigKey(){
-        return name() + ".apiKey";
-    }
-
-    @Override
-    public List<String> findModelIds(NaruSession session) {
-        String apiKey = session.agent().env().get(apiKeyConfigKey())
-                .flatMap(x -> x.asStringValue())
-                .orNull();
-        if(NBlankable.isBlank(apiKey)){
-            return Collections.emptyList();
-        }
-        return new ArrayList<>(supportedModels);
+    protected String defaultBaseUrl() {
+        return "https://generativelanguage.googleapis.com/v1beta/openai";
     }
 
     /**
      * Statically maps model limits since cloud-hosted capabilities cannot be polled natively.
      */
-    private NaruModelCapabilities getStaticCapabilities(String modelName) {
+    @Override
+    protected NaruModelCapabilities resolveCapabilities(String modelName) {
         boolean vision = true;
         boolean tools = true;
         boolean thinking = modelName.contains("pro");
