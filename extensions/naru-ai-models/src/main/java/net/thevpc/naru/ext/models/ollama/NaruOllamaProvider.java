@@ -55,20 +55,20 @@ public class NaruOllamaProvider extends AbstractNaruModelProvider {
 
     private NDuration connectTimeout(NaruSession session) {
         return session.agent().env().get(name() + ".connectTimeout").flatMap(x -> x.asStringValue())
-                .flatMap(x -> NDuration.parse(x))
+                .flatMap(x -> NDuration.of(x))
                 .orElseGetOptionalFrom(
                         () -> session.agent().env().get(name() + ".timeout").flatMap(x -> x.asStringValue())
-                                .flatMap(x -> NDuration.parse(x))
+                                .flatMap(x -> NDuration.of(x))
                 )
                 .orElse(NDuration.ofSeconds(120));
     }
 
     private NDuration readTimeout(NaruSession session) {
         return session.agent().env().get(name() + ".readTimeout").flatMap(x -> x.asStringValue())
-                .flatMap(x -> NDuration.parse(x))
+                .flatMap(x -> NDuration.of(x))
                 .orElseGetOptionalFrom(
                         () -> session.agent().env().get(name() + ".timeout").flatMap(x -> x.asStringValue())
-                                .flatMap(x -> NDuration.parse(x))
+                                .flatMap(x -> NDuration.of(x))
                 )
                 .orElse(NDuration.ofSeconds(120));
     }

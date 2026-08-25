@@ -90,10 +90,10 @@ public class NaruModelProtocolBase implements NaruModelProtocol {
 
     protected NDuration connectTimeout(NaruTask task, Map<String, NElement> env) {
         return task.session().agent().env().get(configPrefix + ".connectTimeout").flatMap(x -> x.asStringValue())
-                .flatMap(x -> NDuration.parse(x))
+                .flatMap(x -> NDuration.of(x))
                 .orElseGetOptionalFrom(
                         () -> task.session().agent().env().get(configPrefix + ".timeout").flatMap(x -> x.asStringValue())
-                                .flatMap(x -> NDuration.parse(x))
+                                .flatMap(x -> NDuration.of(x))
                 )
                 .orElseGet(() -> {
                     return NDuration.ofSeconds(120);
@@ -102,10 +102,10 @@ public class NaruModelProtocolBase implements NaruModelProtocol {
 
     protected NDuration readTimeout(NaruTask task, Map<String, NElement> env) {
         return task.session().agent().env().get(configPrefix + ".readTimeout").flatMap(x -> x.asStringValue())
-                .flatMap(x -> NDuration.parse(x))
+                .flatMap(x -> NDuration.of(x))
                 .orElseGetOptionalFrom(
                         () -> task.session().agent().env().get(configPrefix + ".timeout").flatMap(x -> x.asStringValue())
-                                .flatMap(x -> NDuration.parse(x))
+                                .flatMap(x -> NDuration.of(x))
                 )
                 .orElse(NDuration.ofSeconds(120));
     }

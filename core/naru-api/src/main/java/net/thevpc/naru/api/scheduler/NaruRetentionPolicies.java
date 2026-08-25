@@ -146,7 +146,7 @@ public class NaruRetentionPolicies {
                                 if(lv instanceof Number){
                                     return NOptional.of(new TtlRetentionPolicy(NDuration.ofSeconds(NLiteral.of(lv).asLong().get())));
                                 }else if(lv instanceof String){
-                                    return NOptional.of(new TtlRetentionPolicy(NDuration.parse((String) lv).get()));
+                                    return NOptional.of(new TtlRetentionPolicy(NDuration.of((String) lv).get()));
                                 }
                             }
                         }

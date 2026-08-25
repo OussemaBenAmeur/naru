@@ -20,7 +20,7 @@ public class NaruSleepDirective extends NaruDirectiveBase {
                 if(a==null){
                     task.sleep(NDuration.ofSeconds(1));
                 }else{
-                    NDuration d = NDuration.parse(a.image()).orNull();
+                    NDuration d = NDuration.of(a.image()).orNull();
                     if(d==null){
                         task.throwError(NMsg.ofC("Error on sleep: invalid sleep duration : %s", a.image()));
                         return;
