@@ -83,6 +83,12 @@ public class NaruOpenApiResponseParser implements NElementDeserializer<NaruRespo
             String role = msg.getStringValue("role").orElse("assistant");
             String content = msg.getStringValue("content").orElse("");
 
+            // 2b. Extract reasoning/thinking channel (provider-specific shapes)
+            String thinking = msg.getStringValue("reasoning_content").orNull();
+            if (thinking == null) {
+                thinking = msg.getStringValue("reasoning").orNull();
+            }
+
             // 3. Check for standard OpenAI tool_calls structure
             NOptional<NElement> toolCallsOpt = msg.get("tool_calls");
             if (toolCallsOpt.isPresent() && !toolCallsOpt.isNull()) {
@@ -125,7 +131,7 @@ public class NaruOpenApiResponseParser implements NElementDeserializer<NaruRespo
                     }
                 }
 
-                response.setMessage(NaruMessage.assistantWithToolCalls(content, calls));
+                response.setMessage(NaruMessage.assistantWithToolCalls(content, calls).setThinking(thinking));
             } else {
                 // 4. Content Text Fallback processing (e.g., XML-like tool formats if applicable)
                 if (content.startsWith("<function=")) {
@@ -137,7 +143,25 @@ public class NaruOpenApiResponseParser implements NElementDeserializer<NaruRespo
                         return response;
                     }
                 }
-                response.setMessage(NaruMessage.assistant(content));
+                // 5. Inline <think>...</think> blocks (DeepSeek/Ollama style)
+                if (content != null && content.contains("<think>")) {
+                    java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+                            "<think>(.*?)</think>", java.util.regex.Pattern.DOTALL).matcher(content);
+                    StringBuilder inlineThinking = new StringBuilder();
+                    while (m.find()) {
+                        if (inlineThinking.length() > 0) {
+                            inlineThinking.append("\n\n");
+                        }
+                        inlineThinking.append(m.group(1).trim());
+                    }
+                    String cleaned = content.replaceAll("(?s)<think>.*?</think>", "").trim();
+                    if (thinking == null && inlineThinking.length() > 0) {
+                        thinking = inlineThinking.toString();
+                    }
+                    response.setMessage(NaruMessage.assistant(cleaned).setThinking(thinking));
+                    return response;
+                }
+                response.setMessage(NaruMessage.assistant(content).setThinking(thinking));
             }
         }
         return response;

@@ -40,6 +40,7 @@ public class McpToolsetProvider implements NaruToolsetProvider {
     public NaruToolset createToolset(String id, NObjectElement config) {
         switch (NNameFormat.LOWER_KEBAB_CASE.format(config.getStringValue("type").orElse(""))) {
             case "mcp-stdio":
+            case "":
                 return new McpStdioToolset(id, config);
             case "mcp-sse":
                 return new McpSseToolset(id, config);

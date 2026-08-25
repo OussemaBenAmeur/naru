@@ -25,6 +25,7 @@
         <module>extensions/naru-tools-llm</module>
         <module>extensions/naru-tools-sessions</module>
         <module>extensions/naru-tools-routines</module>
+        <module>extensions/naru-tools-plan</module>
         <module>extensions/naru-tools-tasks</module>
         <module>extensions/naru-tools-tags</module>
         <module>extensions/naru-ai-models</module>

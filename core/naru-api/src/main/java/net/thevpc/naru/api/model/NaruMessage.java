@@ -36,6 +36,11 @@ public class NaruMessage implements NToElement, NCopiable,Cloneable {
      * Tool calls requested by the assistant
      */
     private List<NaruToolCall> toolCalls;
+    /**
+     * Model reasoning/thinking channel content (e.g. reasoning_content, <think> blocks),
+     * kept separate from the user-visible content.
+     */
+    private String thinking;
 
     public NaruMessage() {
     }
@@ -125,6 +130,7 @@ public class NaruMessage implements NToElement, NCopiable,Cloneable {
                 toolCalls.add(new NaruToolCall(nElement));
             }
         }
+        this.thinking = o.getStringValue("thinking").orNull();
     }
 
     @Override
@@ -144,6 +150,7 @@ public class NaruMessage implements NToElement, NCopiable,Cloneable {
             }
             o.set("toolCalls", _toolCalls.build());
         }
+        o.set("thinking", thinking);
         return o.build();
     }
 
@@ -237,6 +244,15 @@ public class NaruMessage implements NToElement, NCopiable,Cloneable {
 
     public void setToolCalls(List<NaruToolCall> toolCalls) {
         this.toolCalls = toolCalls;
+    }
+
+    public String getThinking() {
+        return thinking;
+    }
+
+    public NaruMessage setThinking(String thinking) {
+        this.thinking = (thinking == null || thinking.isBlank()) ? null : thinking;
+        return this;
     }
 
     public boolean hasToolCalls() {

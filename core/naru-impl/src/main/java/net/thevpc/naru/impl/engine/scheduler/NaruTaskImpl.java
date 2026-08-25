@@ -5,6 +5,7 @@ import net.thevpc.naru.api.budget.NaruTokenTransaction;
 import net.thevpc.naru.api.mode.NaruPromptMode;
 import net.thevpc.naru.api.mode.NaruStandardMode;
 import net.thevpc.naru.api.model.*;
+import net.thevpc.naru.api.plan.NaruPlan;
 import net.thevpc.naru.api.registry.NaruToolTag;
 import net.thevpc.naru.api.routine.NaruRoutine;
 import net.thevpc.naru.api.routine.NaruStmtResult;
@@ -743,6 +744,17 @@ public class NaruTaskImpl implements NaruTask, NaruTaskSchedulerView {
             );
         }
         all.add(NaruMessage.system(promptMode().systemPrompt()).setSource(NaruSource.MODE).setSourceName(NNameFormat.LOWER_KEBAB_CASE.format(promptMode().name())));
+        if (sourcesOk.contains(NaruSource.SYSTEM)) {
+            NaruPlan plan = session().planManager().activePlan(id()).orNull();
+            if (plan != null && !plan.isComplete()) {
+                all.add(NaruMessage.system(
+                        "### CURRENT PLAN:\n"
+                                + plan.render()
+                                + "\nKeep this plan up to date: call plan_update as you start/complete/blocked on each step. "
+                                + "Do not skip steps; if the plan is wrong, revise it with plan_create."
+                ).setSource(NaruSource.PLAN).setSourceName("plan"));
+            }
+        }
         HashMap<String, NElement> env = new HashMap<>();
         for (MarkdownWithHeader h : headerAndTexts) {
             if (!h.header().isEmpty()) {

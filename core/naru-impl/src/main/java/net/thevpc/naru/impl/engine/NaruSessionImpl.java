@@ -16,6 +16,7 @@ import net.thevpc.naru.api.task.NaruTaskSpec;
 import net.thevpc.naru.api.registry.NaruRegistry;
 import net.thevpc.naru.impl.ia.budget.NaruMeteringServiceImpl;
 import net.thevpc.naru.impl.registry.NaruRegistryImpl;
+import net.thevpc.naru.impl.engine.plan.NaruPlanManagerImpl;
 import net.thevpc.naru.impl.engine.routine.NaruRoutineMem;
 import net.thevpc.naru.impl.engine.routine.RoutineHelper;
 import net.thevpc.naru.impl.engine.scheduler.NaruSchedulerImpl;
@@ -83,6 +84,7 @@ public class NaruSessionImpl implements NaruSession, NToElement {
     private final List<NaruSessionListener> sessionListeners = new ArrayList<>();
     private boolean stopped;
     private final Map<String, NaruRoutine> routines = new ConcurrentHashMap<>();
+    private final NaruPlanManagerImpl plans = new NaruPlanManagerImpl();
     private NAruVisibility loadTimeVisibility;
     private int schedulerThreadCount = 1;
     private volatile long schedulerThrottleDelayMs = 500;
@@ -503,6 +505,7 @@ public class NaruSessionImpl implements NaruSession, NToElement {
         });
         long finalMaxLong = maxLong.get() == 0 ? 0 : maxLong.get() + 1;
         maxTaskId.updateAndGet(current -> Math.max(current, finalMaxLong));
+        plans.loadFrom(folder);
         return this;
     }
 
@@ -633,6 +636,7 @@ public class NaruSessionImpl implements NaruSession, NToElement {
             NElementWriter.ofTson().ntf(false).formatter(NElementFormatterStyle.PRETTY)
                     .write(e.getValue().toElement(), r.resolve(e.getKey() + ".tson"));
         }
+        plans.saveTo(folder);
     }
 
     public NaruSession load(String otherUuid) {
@@ -898,6 +902,12 @@ public class NaruSessionImpl implements NaruSession, NToElement {
     public NaruSkillManager skillManager() {
         ensureNotStopped();
         return skillManager;
+    }
+
+    @Override
+    public NaruPlanManagerImpl planManager() {
+        ensureNotStopped();
+        return plans;
     }
 
     @Override

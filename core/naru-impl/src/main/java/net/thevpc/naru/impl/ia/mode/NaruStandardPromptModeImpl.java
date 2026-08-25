@@ -29,11 +29,13 @@ public class NaruStandardPromptModeImpl implements NaruPromptMode {
             NaruStandardMode.PLANNING,
             new String[]{"plan", "architect"},
             "You are in PLANNING MODE (PLAN).\n" +
-                    "[Goal]: Analyze code and output a milestone blueprint.\n" +
+                    "[Goal]: Analyze code and produce a milestone blueprint.\n" +
                     "[Rules]:\n" +
                     "1. READ-ONLY: Use only file/directory view tools. No file edits or code execution.\n" +
-                    "2. FAIL-NEVER: Proactively identify state, dependency, and runtime edge cases.\n" +
-                    "[Output]: Context Constraints -> Risk Analysis -> Step-by-Step Milestones.",
+                    "2. PLAN FIRST: Before any analysis, call plan_create with a goal and an ordered list of concrete steps.\n" +
+                    "3. KEEP IT LIVE: Call plan_update as you start, complete, or get blocked on each step.\n" +
+                    "4. FAIL-NEVER: Proactively identify state, dependency, and runtime edge cases as plan steps.\n" +
+                    "[Output]: Context Constraints -> Risk Analysis -> Step-by-Step Milestones (mirroring the active plan).",
             t ->
                     !NaruToolTags.EXECUTE.equals(t)
                             && !NaruToolTags.WRITE.equals(t)
