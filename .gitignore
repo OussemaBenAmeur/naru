@@ -44,3 +44,6 @@ documentation/.naru
 /extensions/naru-tools-web/target/
 /extensions/naru-tools-routines/target/
 /app/naru/target
+/extensions/naru-tools-index/target/
+/extensions/naru-tools-index-java/target/
+/extensions/naru-tools-git/target/

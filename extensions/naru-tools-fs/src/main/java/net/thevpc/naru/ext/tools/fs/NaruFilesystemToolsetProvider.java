@@ -42,8 +42,9 @@ public class NaruFilesystemToolsetProvider implements NaruToolsetProvider {
     private List<NaruTool> fsTools() {
         return Arrays.asList(
                 new FileReadTool(), new FileWriteTool(), new FileAppendTool(),
-                new FileEditLinesTool(), new FileGrepTool(), new DiffFilesTool(),
-                new GetWorkingDirTool(),new FolderFindTool(), new SetWorkingDirTool()
+                new FileEditLinesTool(), new FileEditSearchReplaceTool(), new FileCreateTool(),
+                new FileGrepTool(), new DiffFilesTool(),
+                new GetWorkingDirTool(), new FolderFindTool(), new SetWorkingDirTool()
         );
     }
 

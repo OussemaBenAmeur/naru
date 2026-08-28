@@ -212,6 +212,71 @@ public class FileToolHelper {
         }
     }
 
+    public static String fileEditSearchReplace(NaruTask task, String path, String search, String replace, Long occurrence, Boolean dry) {
+        if (NBlankable.isBlank(path)) return "ERROR: 'path' is required.";
+        if (search == null || search.isEmpty()) return "ERROR: 'search' string cannot be empty.";
+        if (replace == null) replace = "";
+
+        NPath p = task.resolve(path);
+        if (!p.exists()) return "ERROR: File not found: " + p;
+        if (!p.permissions().contains(NPathPermission.CAN_WRITE)) return "ERROR: File is not writable: " + p;
+
+        try {
+            String fullText = p.readString();
+            int count = 0;
+            int idx = 0;
+            List<Integer> matchIndices = new ArrayList<>();
+            while ((idx = fullText.indexOf(search, idx)) != -1) {
+                matchIndices.add(idx);
+                idx += search.length();
+            }
+
+            if (matchIndices.isEmpty()) {
+                return "ERROR: Could not find exact search string in " + p.name();
+            }
+
+            int targetOcc = (occurrence == null || occurrence <= 0) ? 1 : occurrence.intValue();
+            if (targetOcc > matchIndices.size()) {
+                return String.format("ERROR: Requested occurrence %d, but only found %d occurrence(s).", targetOcc, matchIndices.size());
+            }
+
+            int matchIdx = matchIndices.get(targetOcc - 1);
+            String newText = fullText.substring(0, matchIdx) + replace + fullText.substring(matchIdx + search.length());
+
+            if (dry!=null && dry) {
+                String preview = newText.length() > MAX_PREVIEW_CHARS
+                        ? newText.substring(0, MAX_PREVIEW_CHARS) + "\n... [preview truncated]"
+                        : newText;
+                return String.format("DRY RUN SUCCESS: Replaced occurrence %d of search string in %s. Preview:\n```\n%s\n```",
+                        targetOcc, p.name(), preview);
+            }
+
+            p.writeString(newText, StandardCharsets.UTF_8);
+            return String.format("SUCCESS: Replaced occurrence %d of search string in %s (found %d total occurrences).",
+                    targetOcc, p.name(), matchIndices.size());
+
+        } catch (Exception e) {
+            return "ERROR search-replace in file: " + e.getMessage();
+        }
+    }
+
+    public static String fileCreate(NaruTask task, String path, String content, Boolean overwrite) {
+        if (NBlankable.isBlank(path)) return "ERROR: 'path' is required.";
+        if (content == null) content = "";
+
+        NPath p = task.resolve(path);
+        if (p.exists() && (overwrite == null || !overwrite)) {
+            return "ERROR: File already exists at " + p + ". Set overwrite=true to overwrite.";
+        }
+
+        try {
+            p.mkParentDirs().writeString(content, StandardCharsets.UTF_8);
+            return "SUCCESS: Created file at " + p + " (" + content.length() + " bytes).";
+        } catch (Exception e) {
+            return "ERROR creating file: " + e.getMessage();
+        }
+    }
+
     private static int resolveIndex(Long idx, long total) {
         if (idx == null) return 0;
         if (idx < 0) return (int) Math.max(0, total + idx); // -1 → total-1, -2 → total-2

@@ -29,6 +29,9 @@
         <module>extensions/naru-tools-tasks</module>
         <module>extensions/naru-tools-tags</module>
         <module>extensions/naru-ai-models</module>
+        <module>extensions/naru-tools-index</module>
+        <module>extensions/naru-tools-index-java</module>
+        <module>extensions/naru-tools-git</module>
 
         <module>app/naru</module>
     </modules>

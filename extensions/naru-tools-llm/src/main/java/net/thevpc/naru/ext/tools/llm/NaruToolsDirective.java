@@ -3,11 +3,16 @@ package net.thevpc.naru.ext.tools.llm;
 import net.thevpc.naru.api.agent.NaruLogMode;
 import net.thevpc.naru.api.model.NaruMessage;
 import net.thevpc.naru.api.model.NaruToolDefinition;
+import net.thevpc.naru.api.model.NaruToolDefinitionFunction;
 import net.thevpc.naru.api.registry.*;
 import net.thevpc.nuts.cmdline.NArg;
 import net.thevpc.nuts.cmdline.NCmdLine;
+import net.thevpc.nuts.elem.NElement;
+import net.thevpc.nuts.elem.NElementReader;
 import net.thevpc.nuts.text.NMsg;
 import net.thevpc.nuts.text.NText;
+import net.thevpc.nuts.util.NLiteral;
+import net.thevpc.nuts.util.NStringUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -73,7 +78,7 @@ public class NaruToolsDirective extends NaruDirectiveBase {
         });
         register(new AbstractSubCommand("exclude", NText.ofPlain("add tool to exclusion set"),
                 new SubCommandHelp("<tool-name>... [<tool-name>...]", "add tool to exclusion set")
-                ) {
+        ) {
             @Override
             public void execute(NaruDirectiveCallContext context, NCmdLine cmdLine) {
                 NCmdLine cmd = NCmdLine.of(context.argument());
@@ -89,7 +94,7 @@ public class NaruToolsDirective extends NaruDirectiveBase {
         });
         register(new AbstractSubCommand("unexclude", NText.ofPlain("remove tool from exclusion set"),
                 new SubCommandHelp("<tool-name>... [<tool-name>...]", "remove tool from exclusion set")
-                ) {
+        ) {
             @Override
             public void execute(NaruDirectiveCallContext context, NCmdLine cmdLine) {
                 NCmdLine cmd = NCmdLine.of(context.argument());
@@ -119,7 +124,7 @@ public class NaruToolsDirective extends NaruDirectiveBase {
 
         register(new AbstractSubCommand("add-tagged", NText.ofPlain("add tools with the given tags"),
                 new SubCommandHelp("<tag-name>... [<tag-name>...]", "add tools with the given tags")
-                ) {
+        ) {
             @Override
             public void execute(NaruDirectiveCallContext context, NCmdLine cmdLine) {
                 Set<String> tags = new LinkedHashSet<>();
@@ -161,16 +166,97 @@ public class NaruToolsDirective extends NaruDirectiveBase {
                         context.task().log(NaruLogMode.AGENT_RESPONSE, NMsg.ofC("missing tool : %s", a.image()));
                         return;
                     }
+                    List<NaruToolParameter> params = new ArrayList<>();
+                    NaruToolDefinition d = t.getDefinition(context.task());
+                    if (d instanceof NaruToolDefinitionFunction) {
+                        params = ((NaruToolDefinitionFunction) d).getParams();
+                    }
                     Map<String, Object> args = new HashMap<>();
                     while (!cmdLine.isEmpty()) {
-                        NArg e = cmdLine.nextEntry().get();
-                        args.put(e.key(), e.value());
+                        String k = cmdLine.peek().get().key();
+                        NaruToolParameter p = params.stream().filter(x -> x.getName().equals(k)).findFirst().orElse(null);
+                        if (p != null) {
+                            NArg e = cmdLine.nextEntry().get();
+                            String v = e.value();
+                            Object ov = v;
+                            NaruToolParameter.Type pt = p.getType();
+                            if (pt == null) {
+                                pt = NaruToolParameter.Type.STRING;
+                            }
+                            switch (pt) {
+                                case STRING: {
+                                    ov = v;
+                                    break;
+                                }
+                                case BOOLEAN: {
+                                    ov = NLiteral.ofBoolean(v).orNull();
+                                    break;
+                                }
+                                case NUMBER: {
+                                    ov = NLiteral.ofNumber(v).orNull();
+                                    break;
+                                }
+                                case INTEGER: {
+                                    ov = NLiteral.ofInt(v).orNull();
+                                    break;
+                                }
+                                case ARRAY: {
+                                    if (v.startsWith("[") && v.endsWith("]")) {
+                                        ov = NElementReader.ofTson().read(v).asArray().get().children().stream().map(x -> NElement.simpleOf(x)).toArray();
+                                    } else {
+                                        ov = NStringUtils.split(v, ",::", true, true).toArray();
+                                    }
+                                    break;
+                                }
+                                case OBJECT: {
+                                    if (v.startsWith("{") && v.endsWith("}")) {
+                                        ov = NElement.simpleOf(NElementReader.ofTson().read(v).asObject().get());
+                                    } else {
+                                        ov = v;
+                                    }
+                                    break;
+                                }
+                            }
+                            args.put(p.getName(), ov);
+                        } else {
+                            cmdLine.skip();
+                        }
                     }
                     String result = t.execute(new NaruToolCallContextImpl(
                             args, context.task()
                     ));
                     context.task().log(NaruLogMode.AGENT_RESPONSE, NMsg.ofC("%s", result));
                     context.task().addHistory(NaruMessage.user(NMsg.ofC("calls tool %s %s\nresults:\n%s", a.image(), args, result).toString()));
+                }
+            }
+        });
+        register(new AbstractSubCommand("describe", NText.ofPlain("describe a tool"),
+                new SubCommandHelp("<tool-name>", "describe a tool by name")
+        ) {
+            @Override
+            public void execute(NaruDirectiveCallContext context, NCmdLine cmdLine) {
+                NArg a = cmdLine.next().orNull();
+                if (a == null) {
+                    context.task().log(NaruLogMode.AGENT_RESPONSE, NMsg.ofC("missing tool"));
+                } else {
+                    NaruTool t = context.task().session().registry().findTool(a.image()).orNull();
+                    if (t == null) {
+                        context.task().log(NaruLogMode.AGENT_RESPONSE, NMsg.ofC("missing tool : %s", a.image()));
+                        return;
+                    }
+                    List<NaruToolParameter> params = new ArrayList<>();
+                    NaruToolDefinition d = t.getDefinition(context.task());
+                    if (d instanceof NaruToolDefinitionFunction) {
+                        params = ((NaruToolDefinitionFunction) d).getParams();
+                    }
+                    context.task().log(NaruLogMode.AGENT_RESPONSE, NMsg.ofC("  %s - %s",
+                            NMsg.ofStyledPrimary1(t.name())
+                            , t.getDescription(context.task())));
+                    for (NaruToolParameter param : params) {
+                        context.task().log(NaruLogMode.AGENT_RESPONSE, NMsg.ofC("      %s - %s",
+                                NMsg.ofStyledPrimary1(param.getName())
+                                , param.getDescription()));
+                    }
                 }
             }
         });
