@@ -47,3 +47,4 @@ documentation/.naru
 /extensions/naru-tools-index/target/
 /extensions/naru-tools-index-java/target/
 /extensions/naru-tools-git/target/
+/extensions/naru-tools-semantic/target/

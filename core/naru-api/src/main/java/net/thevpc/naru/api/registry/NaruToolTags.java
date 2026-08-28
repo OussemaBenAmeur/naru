@@ -12,4 +12,5 @@ public class NaruToolTags {
     public static final String PLAN = "plan";
     public static final String INDEX = "index";
     public static final String GIT = "git";
+    public static final String SEMANTIC = "semantic";
 }

@@ -32,6 +32,7 @@
         <module>extensions/naru-tools-index</module>
         <module>extensions/naru-tools-index-java</module>
         <module>extensions/naru-tools-git</module>
+        <module>extensions/naru-tools-semantic</module>
 
         <module>app/naru</module>
     </modules>
