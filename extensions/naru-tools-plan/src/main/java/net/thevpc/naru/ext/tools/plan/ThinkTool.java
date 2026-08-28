@@ -1,12 +1,12 @@
 package net.thevpc.naru.ext.tools.plan;
 
-import net.thevpc.naru.api.model.NaruModelCapabilities;
 import net.thevpc.naru.api.model.NaruModelConfig;
 import net.thevpc.naru.api.model.NaruToolDefinition;
 import net.thevpc.naru.api.model.NaruToolDefinitionFunction;
 import net.thevpc.naru.api.registry.DefaultNaruTool;
 import net.thevpc.naru.api.registry.NaruToolCallContext;
 import net.thevpc.naru.api.registry.NaruToolParameter;
+import net.thevpc.naru.api.registry.NaruToolTags;
 import net.thevpc.naru.api.task.NaruTask;
 
 /**
@@ -17,7 +17,7 @@ import net.thevpc.naru.api.task.NaruTask;
 public class ThinkTool extends DefaultNaruTool {
 
     public ThinkTool() {
-        super("think", new String[]{});
+        super("think", new String[]{NaruToolTags.PLAN});
     }
 
     @Override

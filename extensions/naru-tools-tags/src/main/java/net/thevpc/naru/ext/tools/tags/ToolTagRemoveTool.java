@@ -10,13 +10,14 @@ import net.thevpc.naru.api.task.NaruTask;
 import net.thevpc.nuts.util.NStringUtils;
 
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 public class ToolTagRemoveTool implements NaruTool {
 
     @Override
     public String name() {
-        return "tooltag_remove";
+        return "tag_remove";
     }
 
     @Override
@@ -36,9 +37,15 @@ public class ToolTagRemoveTool implements NaruTool {
 
     @Override
     public NaruToolDefinition getDefinition(NaruTask task) {
-        StringBuilder sb = new StringBuilder("remove one or more tags by name (comma separated) from the following list :");
-        for (NaruToolTag value : task.findToolTags()) {
-            sb.append("\n").append(value.name() + " : " + value.description());
+        List<NaruToolTag> alreadyAdded = task.findToolTags();
+        StringBuilder sb = new StringBuilder();
+        if(alreadyAdded.isEmpty()){
+            sb.append("remove one or more tags by name (comma separated), but it seems no tag has already been added yet.");
+        }else{
+            sb.append("remove one or more tags by name (comma separated) from the following list :");
+            for (NaruToolTag value : alreadyAdded) {
+                sb.append("\n        ").append(value.name()).append(" : ").append(value.description());
+            }
         }
         return new NaruToolDefinitionFunction(
                 name(),

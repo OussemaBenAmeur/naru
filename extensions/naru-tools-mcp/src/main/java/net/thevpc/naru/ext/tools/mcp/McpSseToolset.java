@@ -64,7 +64,7 @@ public class McpSseToolset implements NaruToolset {
     }
 
     @Override
-    public List<NaruTool> tools() { return tools; }
+    public List<NaruTool> tools() { return tools==null?Collections.emptyList():tools; }
 
     @Override
     public void close() { client.close(); }

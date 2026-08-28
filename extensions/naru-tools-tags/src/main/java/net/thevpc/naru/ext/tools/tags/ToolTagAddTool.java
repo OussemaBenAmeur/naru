@@ -17,7 +17,7 @@ public class ToolTagAddTool implements NaruTool {
 
     @Override
     public String name() {
-        return "tooltag_add";
+        return "tag_add";
     }
 
     @Override
@@ -46,9 +46,14 @@ public class ToolTagAddTool implements NaruTool {
         for (NaruToolTag toolTag : task.findToolTags()) {
             all.remove(toolTag.name());
         }
-        StringBuilder sb = new StringBuilder("add one or more tags by name (comma separated) from the following list :");
-        for (NaruToolTag value : all.values()) {
-            sb.append("\n").append(value.name() + " : " + value.description());
+        StringBuilder sb = new StringBuilder();
+        if(all.isEmpty()){
+            sb.append("add one or more tags by name (comma separated), however it seems that all tags are already added");
+        }else {
+            sb.append("add one or more tags by name (comma separated) from the following list :");
+            for (NaruToolTag value : all.values()) {
+                sb.append("\n        ").append(value.name()).append(" : ").append(value.description());
+            }
         }
         return new NaruToolDefinitionFunction(
                 name(),

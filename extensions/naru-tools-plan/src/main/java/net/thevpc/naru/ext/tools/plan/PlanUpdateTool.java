@@ -7,12 +7,13 @@ import net.thevpc.naru.api.plan.NaruPlanStatus;
 import net.thevpc.naru.api.registry.DefaultNaruTool;
 import net.thevpc.naru.api.registry.NaruToolCallContext;
 import net.thevpc.naru.api.registry.NaruToolParameter;
+import net.thevpc.naru.api.registry.NaruToolTags;
 import net.thevpc.naru.api.task.NaruTask;
 
 public class PlanUpdateTool extends DefaultNaruTool {
 
     public PlanUpdateTool() {
-        super("plan_update", new String[]{});
+        super("plan_update", new String[]{NaruToolTags.PLAN});
     }
 
     @Override

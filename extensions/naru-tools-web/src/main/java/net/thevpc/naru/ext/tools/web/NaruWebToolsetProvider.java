@@ -17,12 +17,12 @@ public class NaruWebToolsetProvider implements NaruToolsetProvider {
 
     @Override
     public String name() {
-        return "sh";
+        return "web";
     }
 
     @Override
     public List<String> supportedTypes() {
-        return Arrays.asList("sh");
+        return Arrays.asList("web");
     }
 
 
@@ -45,10 +45,4 @@ public class NaruWebToolsetProvider implements NaruToolsetProvider {
         return List.of(new SearchWebScriptTool());
     }
 
-
-    private List<NaruTool> allCommonTools() {
-        List<NaruTool> all = new ArrayList<>();
-        all.addAll(webTools());
-        return all;
-    }
 }

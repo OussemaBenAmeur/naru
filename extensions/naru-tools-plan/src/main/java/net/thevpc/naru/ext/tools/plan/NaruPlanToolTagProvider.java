@@ -1,4 +1,4 @@
-package net.thevpc.naru.ext.tools.fs;
+package net.thevpc.naru.ext.tools.plan;
 
 import net.thevpc.naru.api.registry.DefaultNaruToolTag;
 import net.thevpc.naru.api.registry.NaruToolTag;
@@ -9,16 +9,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class NaruFilesystemToolTagProvider implements NaruToolTagProvider {
+public class NaruPlanToolTagProvider implements NaruToolTagProvider {
     private final List<NaruToolTag> all = new ArrayList<>();
 
-    public NaruFilesystemToolTagProvider() {
-        all.add(new DefaultNaruToolTag(NaruToolTags.FILE_SYSTEM, "file system operations including add,edit,search files"));
+    public NaruPlanToolTagProvider() {
+        all.add(new DefaultNaruToolTag(NaruToolTags.PLAN, "Planning tools"));
     }
 
     @Override
     public String name() {
-        return "fs";
+        return "plan";
     }
 
     @Override

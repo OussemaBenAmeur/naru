@@ -6,13 +6,14 @@ import net.thevpc.naru.api.plan.NaruPlan;
 import net.thevpc.naru.api.registry.DefaultNaruTool;
 import net.thevpc.naru.api.registry.NaruToolCallContext;
 import net.thevpc.naru.api.registry.NaruToolParameter;
+import net.thevpc.naru.api.registry.NaruToolTags;
 import net.thevpc.naru.api.task.NaruTask;
 import net.thevpc.nuts.elem.NElement;
 
 public class PlanCreateTool extends DefaultNaruTool {
 
     public PlanCreateTool() {
-        super("plan_create", new String[]{});
+        super("plan_create", new String[]{NaruToolTags.PLAN});
     }
 
     @Override

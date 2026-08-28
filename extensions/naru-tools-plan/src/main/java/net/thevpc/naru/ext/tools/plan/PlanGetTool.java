@@ -5,12 +5,13 @@ import net.thevpc.naru.api.model.NaruToolDefinitionFunction;
 import net.thevpc.naru.api.registry.DefaultNaruTool;
 import net.thevpc.naru.api.registry.NaruToolCallContext;
 import net.thevpc.naru.api.registry.NaruToolParameter;
+import net.thevpc.naru.api.registry.NaruToolTags;
 import net.thevpc.naru.api.task.NaruTask;
 
 public class PlanGetTool extends DefaultNaruTool {
 
     public PlanGetTool() {
-        super("plan_get", new String[]{});
+        super("plan_get", new String[]{NaruToolTags.PLAN});
     }
 
     @Override

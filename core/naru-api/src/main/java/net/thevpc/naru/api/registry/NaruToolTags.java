@@ -9,4 +9,5 @@ public class NaruToolTags {
     public static final String AI = "ai";
     public static final String DEV = "dev";
     public static final String MCP = "mcp";
+    public static final String PLAN = "plan";
 }
