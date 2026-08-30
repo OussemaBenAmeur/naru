@@ -18,6 +18,7 @@ import net.thevpc.nuts.util.NBlankable;
 import net.thevpc.nuts.util.NOptional;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * OpenRouter provider — one API key gives access to hundreds of models,
@@ -31,10 +32,14 @@ public class NaruOpenRouterProvider extends AbstractNaruModelProvider {
     private static final String DEFAULT_BASE_URL = "https://openrouter.ai/api/v1";
 
     private final Map<NaruModelConfig, NaruModelProtocol> protocols = new HashMap<>();
-    private final NElementReader nElementReader = NElementReader.ofJson();
+    private final Map<String, NaruModelCapabilities> cachedCapabilities = new ConcurrentHashMap<>();
 
     public NaruOpenRouterProvider() {
         super("openrouter");
+    }
+
+    private NElementReader elementReader() {
+        return NElementReader.ofJson();
     }
 
     @Override
@@ -49,37 +54,123 @@ public class NaruOpenRouterProvider extends AbstractNaruModelProvider {
     }
 
     /**
-     * Model list is dynamic: fetched live from GET /models.
-     * Free ({@code :free}) variants are listed first.
+     * Model list is dynamic: fetched live from GET /models when an API key is provided.
+     * If no API key is provided, returns empty list because OpenRouter models cannot be used.
      */
     @Override
     public List<String> findModelIds(NaruSession session) {
+        String apiKey = apiKey(session);
+        if (NBlankable.isBlank(apiKey)) {
+            return Collections.emptyList();
+        }
+
         NWebCli http = NWebCli.of()
                 .connectTimeout(NDuration.ofSeconds(10))
                 .baseUri(baseUrl(session));
         NWebRequest request = http.GET("models")
                 .readTimeout(NDuration.ofSeconds(30));
-        String apiKey = apiKey(session);
-        if (!NBlankable.isBlank(apiKey)) {
-            request.header("Authorization", "Bearer " + apiKey);
-        }
+        request.header("Authorization", "Bearer " + apiKey);
+
         try {
             NWebResponse response = request.run().ifErrorThrow();
-            NElement root = nElementReader.read(response.contentAsString());
+            NElement root = elementReader().read(response.contentAsString());
+
+            boolean freeOnly = isFreeOnlyConfigured(session);
+            List<String> includeFilters = parseFilterList(getFilterString(session));
+            List<String> excludeFilters = parseFilterList(getExcludeString(session));
+            int limit = getLimitConfigured(session);
+
             List<String> free = new ArrayList<>();
             List<String> paid = new ArrayList<>();
+
             root.asObject().flatMap(o -> o.getArray("data")).ifPresent(arr -> {
                 for (NElement el : arr.children()) {
-                    el.asObject().flatMap(o -> o.getStringValue("id")).ifPresent(id -> {
-                        (id.endsWith(":free") ? free : paid).add(id);
-                    });
+                    if (!el.isAnyObject()) continue;
+                    NObjectElement obj = el.asObject().get();
+                    String id = obj.getStringValue("id").orElse(null);
+                    if (id == null || id.isBlank()) continue;
+
+                    boolean isFree = id.endsWith(":free");
+                    NObjectElement pricing = obj.getObject("pricing").orNull();
+                    if (pricing != null) {
+                        String promptPrice = pricing.getStringValue("prompt").orElse("");
+                        String compPrice = pricing.getStringValue("completion").orElse("");
+                        if (("0".equals(promptPrice) || "0.0".equals(promptPrice)) &&
+                                ("0".equals(compPrice) || "0.0".equals(compPrice))) {
+                            isFree = true;
+                        }
+                    }
+
+                    // Parse capabilities from OpenRouter JSON
+                    long contextLength = obj.getLongValue("context_length").orElse(-1L);
+                    boolean vision = id.contains("vision") || id.contains("vl");
+                    NObjectElement arch = obj.getObject("architecture").orNull();
+                    if (arch != null) {
+                        NArrayElement inModalities = arch.getArray("input_modalities").orNull();
+                        if (inModalities != null) {
+                            for (NElement m : inModalities) {
+                                String s = m.asStringValue().orElse("");
+                                if ("image".equalsIgnoreCase(s) || "video".equalsIgnoreCase(s)) {
+                                    vision = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    boolean tools = true;
+                    boolean thinking = id.contains("thinking") || id.contains("r1") || id.contains("qwq")
+                            || id.contains("o1") || id.contains("o3");
+                    NArrayElement params = obj.getArray("supported_parameters").orNull();
+                    if (params != null) {
+                        boolean hasToolsParam = false;
+                        for (NElement p : params) {
+                            String paramName = p.asStringValue().orElse("");
+                            if ("tools".equalsIgnoreCase(paramName)) {
+                                hasToolsParam = true;
+                            }
+                            if ("reasoning".equalsIgnoreCase(paramName) || "include_reasoning".equalsIgnoreCase(paramName)) {
+                                thinking = true;
+                            }
+                        }
+                        tools = hasToolsParam;
+                    }
+
+                    cachedCapabilities.put(id, new NaruModelCapabilitiesImpl(vision, tools, thinking, false, contextLength));
+
+                    // Filter application
+                    if (freeOnly && !isFree) {
+                        continue;
+                    }
+
+                    if (!matchesAny(id, includeFilters, true)) {
+                        continue;
+                    }
+
+                    if (matchesAny(id, excludeFilters, false)) {
+                        continue;
+                    }
+
+                    if (isFree) {
+                        free.add(id);
+                    } else {
+                        paid.add(id);
+                    }
                 }
             });
+
+            Collections.sort(free);
+            Collections.sort(paid);
+
             List<String> all = new ArrayList<>(free);
             all.addAll(paid);
+
+            if (limit > 0 && all.size() > limit) {
+                return all.subList(0, limit);
+            }
             return all;
         } catch (Exception e) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
     }
 
@@ -91,16 +182,95 @@ public class NaruOpenRouterProvider extends AbstractNaruModelProvider {
     }
 
     protected String apiKey(NaruSession session) {
-        return session.agent().env().get(name() + ".apiKey")
+        String key = session.agent().env().get(name() + ".apiKey")
                 .flatMap(x -> x.asStringValue()).orNull();
+        if (NBlankable.isBlank(key)) {
+            key = session.agent().env().get(name() + ".apikey")
+                    .flatMap(x -> x.asStringValue()).orNull();
+        }
+        if (NBlankable.isBlank(key)) {
+            key = session.agent().env().get(name() + ".key")
+                    .flatMap(x -> x.asStringValue()).orNull();
+        }
+        if (NBlankable.isBlank(key)) {
+            key = System.getenv("OPENROUTER_API_KEY");
+        }
+        return key;
     }
 
-    /**
-     * Capabilities are unknown per-model without a catalog lookup;
-     * assume text+tools (the most common case) and let tool-call
-     * emulation handle models that lack native support.
-     */
+    private NOptional<NElement> getEnv(NaruSession session, String... keys) {
+        for (String key : keys) {
+            NOptional<NElement> val = session.agent().env().get(key);
+            if (val != null && val.isPresent()) {
+                return val;
+            }
+        }
+        return NOptional.ofEmpty();
+    }
+
+    private boolean isFreeOnlyConfigured(NaruSession session) {
+        return getEnv(session, name() + ".freeOnly", name() + ".onlyFree")
+                .flatMap(NElement::asBooleanValue)
+                .orElse(false);
+    }
+
+    private String getFilterString(NaruSession session) {
+        return getEnv(session, name() + ".filter", name() + ".models", name() + ".include")
+                .flatMap(NElement::asStringValue)
+                .orNull();
+    }
+
+    private String getExcludeString(NaruSession session) {
+        return getEnv(session, name() + ".exclude")
+                .flatMap(NElement::asStringValue)
+                .orNull();
+    }
+
+    private int getLimitConfigured(NaruSession session) {
+        return getEnv(session, name() + ".limit", name() + ".maxModels")
+                .flatMap(NElement::asIntValue)
+                .orElse(-1);
+    }
+
+    private List<String> parseFilterList(String filterString) {
+        if (NBlankable.isBlank(filterString)) {
+            return Collections.emptyList();
+        }
+        List<String> list = new ArrayList<>();
+        for (String s : filterString.split("[,;\\s]+")) {
+            if (!s.isBlank()) {
+                list.add(s.trim().toLowerCase());
+            }
+        }
+        return list;
+    }
+
+    private boolean matchesAny(String modelId, List<String> filters, boolean defaultIfEmpty) {
+        if (filters == null || filters.isEmpty()) {
+            return defaultIfEmpty;
+        }
+        String idLower = modelId.toLowerCase();
+        for (String f : filters) {
+            if (f.equals("*")) return true;
+            if (f.startsWith("*") && f.endsWith("*") && f.length() > 2) {
+                if (idLower.contains(f.substring(1, f.length() - 1))) return true;
+            } else if (f.endsWith("*")) {
+                if (idLower.startsWith(f.substring(0, f.length() - 1))) return true;
+            } else if (f.startsWith("*")) {
+                if (idLower.endsWith(f.substring(1))) return true;
+            } else {
+                if (idLower.contains(f)) return true;
+            }
+        }
+        return false;
+    }
+
     private NaruModelCapabilities resolveCapabilities(String modelName) {
+        NaruModelCapabilities cached = cachedCapabilities.get(modelName);
+        if (cached != null) {
+            return cached;
+        }
+
         boolean vision = modelName.contains("vision") || modelName.contains("vl")
                 || modelName.contains("gemini") || modelName.contains("gpt-4o");
         boolean tools = true;

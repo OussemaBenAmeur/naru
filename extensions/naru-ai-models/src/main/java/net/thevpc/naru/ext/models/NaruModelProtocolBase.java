@@ -4,6 +4,7 @@ import net.thevpc.naru.api.task.NaruTask;
 import net.thevpc.naru.api.model.*;
 import net.thevpc.naru.ext.models.util.NaruModelUtils;
 import net.thevpc.nuts.elem.*;
+import net.thevpc.nuts.net.NHttpCode;
 import net.thevpc.nuts.net.NWebCli;
 import net.thevpc.nuts.net.NWebRequest;
 import net.thevpc.nuts.net.NWebResponse;
@@ -15,6 +16,7 @@ import net.thevpc.nuts.util.NIllegalArgumentException;
 import net.thevpc.nuts.util.NOptional;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -117,7 +119,7 @@ public class NaruModelProtocolBase implements NaruModelProtocol {
             emulate_tool_calls = mrequest.env().get("emulate_tool_calls").asBooleanValue().get();
         }
         if (!capabilities.isTools() && !mrequest.tools().isEmpty() || emulate_tool_calls) {
-            mrequest = NoTollWrapHelper.wrapRequest(mrequest, NoTollWrapHelper.TOOL_CALL_SEP, NoTollWrapHelper.TOOL_RESULT_SEP);
+            mrequest = NoToolWrapHelper.wrapRequest(mrequest, NoToolWrapHelper.TOOL_CALL_SEP, NoToolWrapHelper.TOOL_RESULT_SEP);
         }
         return mrequest;
     }
@@ -194,7 +196,8 @@ public class NaruModelProtocolBase implements NaruModelProtocol {
         java.util.concurrent.atomic.AtomicReference<NDuration> dynamicRetryAfter = new java.util.concurrent.atomic.AtomicReference<>();
         java.util.concurrent.atomic.AtomicInteger attemptCounter = new java.util.concurrent.atomic.AtomicInteger(0);
 
-        net.thevpc.nuts.concurrent.NRetryCall<NaruResponse> retryCall = net.thevpc.nuts.concurrent.NRetryCall.of("llm-" + provider().name(), () -> {
+        try(net.thevpc.nuts.concurrent.NRetryCall<NaruResponse> retryCall = net.thevpc.nuts.concurrent.NRetryCall
+                .of("llm-" + provider().name()+"-"+ UUID.randomUUID(), () -> {
             int attempt = attemptCounter.incrementAndGet();
             NChronometer chrono = NChronometer.of();
             java.time.Instant reqTime = java.time.Instant.now();
@@ -204,9 +207,9 @@ public class NaruModelProtocolBase implements NaruModelProtocol {
             try {
                 NaruModelUtils.logWebRequest(request, NMsg.ofC("chat with %s (attempt %s)", model, attempt), body);
                 response = request.run();
-                int code = response.intStatusCode();
+                NHttpCode code = response.statusCode();
 
-                if (code == 429) {
+                if (code.equals(NHttpCode.TOO_MANY_REQUESTS) ) {
                     NDuration retryAfter = NaruModelUtils.parseRetryAfter(response);
                     if (retryAfter != null) {
                         dynamicRetryAfter.set(retryAfter);
@@ -245,7 +248,7 @@ public class NaruModelProtocolBase implements NaruModelProtocol {
                 NaruModelUtils.logWebResponse(request, NMsg.ofC("chat with %s (attempt %s)", model, attempt), body, responseElement != null ? responseElement : responseString, chrono);
                 NaruResponse naruResponse = parseResponse(responseString);
                 if (toolsWrapped || emulate_tool_calls) {
-                    naruResponse = NoTollWrapHelper.unwrapResponse(naruResponse, NoTollWrapHelper.TOOL_CALL_SEP, task);
+                    naruResponse = NoToolWrapHelper.unwrapResponse(naruResponse, NoToolWrapHelper.TOOL_CALL_SEP, task);
                 }
                 return naruResponse;
             } catch (Throwable t) {
@@ -267,34 +270,34 @@ public class NaruModelProtocolBase implements NaruModelProtocol {
                         reqTime
                 );
             }
-        });
+        })){
+            retryCall.maxRetries(maxRetries)
+                    .retryPeriod(attempt -> {
+                        NDuration custom = dynamicRetryAfter.getAndSet(null);
+                        if (custom != null && !custom.isZero()) {
+                            return custom;
+                        }
+                        // Exponential backoff: baseDelay * 2^(attempt - 1)
+                        return baseDelay.mul(Math.pow(2.0, Math.max(0, attempt - 1)));
+                    });
 
-        retryCall.maxRetries(maxRetries)
-                .retryPeriod(attempt -> {
-                    NDuration custom = dynamicRetryAfter.getAndSet(null);
-                    if (custom != null && !custom.isZero()) {
-                        return custom;
-                    }
-                    // Exponential backoff: baseDelay * 2^(attempt - 1)
-                    return baseDelay.mul(Math.pow(2.0, Math.max(0, attempt - 1)));
-                });
-
-        try {
-            return retryCall.call();
-        } catch (NonRetryableWebException nre) {
-            Throwable cause = nre.getCause();
-            net.thevpc.nuts.log.NLog.of(getClass()).log(NMsg.ofC("Failed to communicate with %s at %s: %s\n-----BODY\n%s\n-----BODY\n-----RESPONSE\n%s\n-----RESPONSE",
-                    provider().name(), request.effectiveUri(), cause.getMessage(),
-                    NElementWriter.ofTson().formatPlain(body),
-                    nre.getResponseString()
-            ).asError());
-            throw new NIllegalArgumentException(NMsg.ofC("Failed to communicate with %s at %s: %s", provider().name(), request.effectiveUri(), cause.getMessage(), cause));
-        } catch (Exception e) {
-            net.thevpc.nuts.log.NLog.of(getClass()).log(NMsg.ofC("Failed to communicate with %s at %s: %s\n-----BODY\n%s\n-----BODY",
-                    provider().name(), request.effectiveUri(), e.getMessage(),
-                    NElementWriter.ofTson().formatPlain(body)
-            ).asError());
-            throw new NIllegalArgumentException(NMsg.ofC("Failed to communicate with %s at %s: %s", provider().name(), request.effectiveUri(), e.getMessage(), e));
+            try {
+                return retryCall.call();
+            } catch (NonRetryableWebException nre) {
+                Throwable cause = nre.getCause();
+                net.thevpc.nuts.log.NLog.of(getClass()).log(NMsg.ofC("Failed to communicate with %s at %s: %s\n-----BODY\n%s\n-----BODY\n-----RESPONSE\n%s\n-----RESPONSE",
+                        provider().name(), request.effectiveUri(), cause.getMessage(),
+                        NElementWriter.ofTson().formatPlain(body),
+                        nre.getResponseString()
+                ).asError());
+                throw new NIllegalArgumentException(NMsg.ofC("Failed to communicate with %s at %s: %s", provider().name(), request.effectiveUri(), cause.getMessage(), cause));
+            } catch (Exception e) {
+                net.thevpc.nuts.log.NLog.of(getClass()).log(NMsg.ofC("Failed to communicate with %s at %s: %s\n-----BODY\n%s\n-----BODY",
+                        provider().name(), request.effectiveUri(), e.getMessage(),
+                        NElementWriter.ofTson().formatPlain(body)
+                ).asError());
+                throw new NIllegalArgumentException(NMsg.ofC("Failed to communicate with %s at %s: %s", provider().name(), request.effectiveUri(), e.getMessage(), e));
+            }
         }
     }
 

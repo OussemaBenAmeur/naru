@@ -11,7 +11,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class NoTollWrapHelper {
+public class NoToolWrapHelper {
     //    public static final Separators TOOL_CALL = new Separators("<tool_call>", "</tool_call>");
     public static final Separators TOOL_CALL_SEP = new Separators("<|tool_call|>", "<|end_tool_call|>");
     public static final Separators TOOL_RESULT_SEP = new Separators("<|tool_result|>", "<|end_tool_result|>");

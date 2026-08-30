@@ -238,7 +238,8 @@ public class NaruModelDirective extends NaruDirectiveBase {
                 executeUnsetAlias(context, cmdLine);
             }
         });
-        register(new AbstractSubCommand("list", NText.ofPlain("list aliases")
+        register(new AbstractSubCommand("list", NText.ofPlain("list available models"),
+                new SubCommandHelp(NText.of("[<filter>] [--provider=<name>] [--free]"), NText.ofPlain("list available models, optionally filtered by keyword or provider"))
         ) {
             @Override
             public void execute(NaruDirectiveCallContext context, NCmdLine cmdLine) {
@@ -267,16 +268,66 @@ public class NaruModelDirective extends NaruDirectiveBase {
 
     public void executeList(NaruDirectiveCallContext context, NCmdLine cmdLine) {
         NaruTask task = context.task();
-        int index = 1;
-        List<NaruModelInfo> models = context.task().session().registry().modelsInfos(task.session());
-        if (models.isEmpty()) {
-            task.log(NaruLogMode.AGENT_RESPONSE, NMsg.ofC("no model found. is %s live?", NMsg.ofStyledPrimary1("ollama")).asError());
+        String filter = null;
+        String providerFilter = null;
+        boolean freeOnly = false;
+        while (cmdLine.hasNext()) {
+            NArg a = cmdLine.next().get();
+            if (a.isOption()) {
+                if (a.key().equals("--provider") || a.key().equals("-p")) {
+                    providerFilter = a.getStringValue().orNull();
+                } else if (a.key().equals("--free") || a.key().equals("-f")) {
+                    freeOnly = true;
+                }
+            } else {
+                if (filter == null) {
+                    filter = a.image();
+                } else {
+                    filter = filter + " " + a.image();
+                }
+            }
+        }
+
+        List<NaruModelInfo> allModels = context.task().session().registry().modelsInfos(task.session());
+        if (allModels.isEmpty()) {
+            task.log(NaruLogMode.AGENT_RESPONSE, NMsg.ofC("No available models found. Check if %s is running ('/ollama status') or configure an API key for a cloud provider (e.g. 'openrouter.apiKey', 'gemini.apiKey', 'groq.apiKey').", NMsg.ofStyledPrimary1("ollama")).asError());
             return;
         }
-        task.log(NaruLogMode.AGENT_RESPONSE, NMsg.ofC("%s Available models:", models.size()));
+
+        List<NaruModelInfo> models = new ArrayList<>();
+        for (NaruModelInfo m : allModels) {
+            if (providerFilter != null && !m.provider().equalsIgnoreCase(providerFilter)) {
+                continue;
+            }
+            if (freeOnly && !m.model().endsWith(":free") && !m.provider().equals("ollama")) {
+                continue;
+            }
+            if (filter != null) {
+                String flc = filter.toLowerCase();
+                boolean match = m.model().toLowerCase().contains(flc)
+                        || m.provider().toLowerCase().contains(flc)
+                        || task.session().modelAliases().values().stream()
+                        .filter(x -> x.key().equals(m.key()))
+                        .anyMatch(x -> x.name().toLowerCase().contains(flc));
+                if (!match) {
+                    continue;
+                }
+            }
+            models.add(m);
+        }
+
+        if (models.isEmpty()) {
+            String crit = filter != null ? "'" + filter + "'" : (providerFilter != null ? "provider '" + providerFilter + "'" : "criteria");
+            task.log(NaruLogMode.AGENT_RESPONSE, NMsg.ofC("No available models found matching %s (%s total models available).", crit, allModels.size()));
+            return;
+        }
+
+        String titleSuffix = (filter != null || providerFilter != null || freeOnly) ? " (filtered)" : "";
+        task.log(NaruLogMode.AGENT_RESPONSE, NMsg.ofC("%s Available models%s:", models.size(), titleSuffix));
         int zeros = (int) Math.ceil(Math.log10(models.size()));
-        DecimalFormat zformat = new DecimalFormat(NStringUtils.repeat("0", zeros));
+        DecimalFormat zformat = new DecimalFormat(NStringUtils.repeat("0", Math.max(1, zeros)));
         NaruModelConfig selectedModel = task.model();
+        int index = 1;
         for (NaruModelInfo model : models) {
 
             NaruModelKey mkey = model.key();
@@ -293,7 +344,7 @@ public class NaruModelDirective extends NaruDirectiveBase {
                         extra1.append(NMsg.ofStyledSeparator(", "));
                     }
                     String c = currAliases.get(i);
-                    if (Objects.equals(c, selectedModel.name())) {
+                    if (selectedModel != null && Objects.equals(c, selectedModel.name())) {
                         extra1.append(NMsg.ofStyledPrimary3(c));
                     } else {
                         extra1.append(NMsg.ofStyledPrimary1(c));
@@ -303,7 +354,7 @@ public class NaruModelDirective extends NaruDirectiveBase {
             }
 
             NMsg extra2 = null;
-            if (mkey.equals(selectedModel.key())) {
+            if (selectedModel != null && mkey.equals(selectedModel.key())) {
                 extra2 = NMsg.ofC("%s%s%s",
                         NMsg.ofStyledSeparator("("),
                         NMsg.ofStyledSuccess("*"),
