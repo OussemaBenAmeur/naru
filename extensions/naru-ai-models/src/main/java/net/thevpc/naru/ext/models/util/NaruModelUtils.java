@@ -13,6 +13,8 @@ import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.io.NPathOption;
 import net.thevpc.nuts.mon.NChronometer;
 import net.thevpc.nuts.net.NWebRequest;
+import net.thevpc.nuts.net.NWebResponse;
+import net.thevpc.nuts.time.NDuration;
 import net.thevpc.nuts.platform.NStoreScope;
 import net.thevpc.nuts.platform.NStoreType;
 import net.thevpc.nuts.text.*;
@@ -113,7 +115,7 @@ public class NaruModelUtils {
         sb.append(" : ");
         if (input != null) {
             sb.append("\n REQUEST : ");
-            sb.append("\n").append(NElementWriter.ofJson().formatPlain(input));
+            sb.append("\n").append(NElementWriter.ofTson().formatPlain(input));
         }
         log(NMsg.ofC("%s", sb.build()));
     }
@@ -126,13 +128,202 @@ public class NaruModelUtils {
         sb.append(" : ");
         if (input != null) {
             sb.append("\n REQUEST : ");
-            sb.append("\n").append(NElementWriter.ofJson().formatPlain(input));
+            sb.append("\n").append(NElementWriter.ofTson().formatPlain(input));
         }
         if (output != null) {
             sb.append("\n RESPONSE : ");
-            sb.append("\n").append(NElementWriter.ofJson().formatPlain(output));
+            sb.append("\n").append(NElementWriter.ofTson().formatPlain(output));
         }
         log(NMsg.ofC("%s", sb.build()).withDuration(chronometer.duration()));
+    }
+
+    public static NDuration parseRetryAfter(NWebResponse response) {
+        if (response == null) return null;
+        String header = response.header("retry-after").orNull();
+        if (NBlankable.isBlank(header)) {
+            header = response.header("Retry-After").orNull();
+        }
+        if (NBlankable.isBlank(header)) {
+            header = response.header("retry-after-ms").orNull();
+            if (NBlankable.isNonBlank(header)) {
+                try {
+                    long ms = Long.parseLong(header.trim());
+                    return NDuration.ofMillis(Math.max(100, ms));
+                } catch (Exception ignored) {
+                }
+            }
+            return null;
+        }
+        header = header.trim();
+        // 1. Try integer seconds
+        try {
+            long seconds = Long.parseLong(header);
+            return NDuration.ofSeconds(Math.max(1, seconds));
+        } catch (NumberFormatException ignored) {
+        }
+        // 2. Try decimal seconds (e.g. 1.5)
+        try {
+            double seconds = Double.parseDouble(header);
+            return NDuration.ofMillis((long) (Math.max(0.1, seconds) * 1000));
+        } catch (NumberFormatException ignored) {
+        }
+        // 3. Try RFC 1123 HTTP Date
+        try {
+            java.time.ZonedDateTime serverTime = java.time.ZonedDateTime.parse(header, java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME);
+            Instant target = serverTime.toInstant();
+            Instant now = Instant.now();
+            if (target.isAfter(now)) {
+                return NDuration.ofMillis(Duration.between(now, target).toMillis());
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    public static List<NPath> resolveTaskAuditPaths(NaruTask task, net.thevpc.naru.api.agent.NaruSession session) {
+        List<NPath> paths = new ArrayList<>();
+        final net.thevpc.naru.api.agent.NaruSession finalSession = (session == null && task != null) ? task.session() : session;
+        long taskId = task != null ? task.id() : 0;
+        String sessionUuid = finalSession != null ? finalSession.uuid() : "default";
+
+        // Check if custom audit dir configured in env
+        if (finalSession != null) {
+            String customDir = finalSession.agent().env().get("audit.dir")
+                    .flatMap(NElement::asStringValue)
+                    .orElseGetOptionalFrom(() -> finalSession.agent().env().get("llm.audit.dir").flatMap(NElement::asStringValue))
+                    .orNull();
+            if (NBlankable.isNonBlank(customDir)) {
+                paths.add(NPath.of(customDir).resolve("task-" + taskId + ".tson"));
+                return paths;
+            }
+        }
+
+        // 1. Session audit folder in projectDir
+        if (finalSession != null && finalSession.projectDir() != null) {
+            paths.add(finalSession.projectDir().resolve(".naru/local/sessions").resolve(sessionUuid).resolve("audit").resolve("task-" + taskId + ".tson"));
+            paths.add(finalSession.projectDir().resolve(".naru/local/logs").resolve("task-" + taskId + "-llm-audit.tson"));
+        } else {
+            // 2. Workspace log fallback
+            paths.add(NPath.of(NStoreKey.of(
+                    NStoreScope.WORKSPACE,
+                    NStoreType.LOG,
+                    NId.of("net.thevpc.naru:naru").sharedId(),
+                    "audit/task-" + taskId + ".tson"
+            )));
+        }
+        return paths;
+    }
+
+    public static String maskHeaderValue(String name, String value) {
+        if (value == null) return null;
+        if ("authorization".equalsIgnoreCase(name) || "x-api-key".equalsIgnoreCase(name) || "api-key".equalsIgnoreCase(name)) {
+            if (value.regionMatches(true, 0, "bearer ", 0, 7)) {
+                String token = value.substring(7).trim();
+                if (token.length() > 8) {
+                    return "Bearer " + token.substring(0, 4) + "..." + token.substring(token.length() - 3);
+                }
+                return "Bearer ***";
+            }
+            if (value.length() > 8) {
+                return value.substring(0, 4) + "..." + value.substring(value.length() - 3);
+            }
+            return "***";
+        }
+        return value;
+    }
+
+    public static void logAudit(NaruTask task,
+                                net.thevpc.naru.api.agent.NaruSession session,
+                                String provider,
+                                String model,
+                                NWebRequest request,
+                                Object requestBody,
+                                net.thevpc.nuts.net.NWebResponse response,
+                                Object responseBody,
+                                Throwable error,
+                                int attempt,
+                                NDuration duration,
+                                Instant requestTime) {
+        try {
+            if (session == null && task != null) {
+                session = task.session();
+            }
+            Map<String, Object> auditMap = new LinkedHashMap<>();
+            auditMap.put("id", UUID.randomUUID().toString());
+            auditMap.put("timestamp", requestTime != null ? requestTime.toString() : Instant.now().toString());
+            if (task != null) {
+                auditMap.put("taskId", task.id());
+                if (task.name() != null) {
+                    auditMap.put("taskName", task.name());
+                }
+            }
+            if (session != null) {
+                auditMap.put("sessionUuid", session.uuid());
+            }
+            if (provider != null) {
+                auditMap.put("provider", provider);
+            }
+            if (model != null) {
+                auditMap.put("model", model);
+            }
+            if (request != null) {
+                auditMap.put("url", request.effectiveUri());
+                auditMap.put("method", request.method() != null ? request.method().toString() : "POST");
+
+                Map<String, Object> reqHeaders = new LinkedHashMap<>();
+                for (Map.Entry<String, List<String>> entry : request.headers().entrySet()) {
+                    String k = entry.getKey();
+                    List<String> values = entry.getValue();
+                    if (values != null && !values.isEmpty()) {
+                        reqHeaders.put(k, maskHeaderValue(k, values.get(0)));
+                    }
+                }
+                auditMap.put("requestHeaders", reqHeaders);
+            }
+            if (requestBody != null) {
+                auditMap.put("requestBody", requestBody);
+            }
+
+            auditMap.put("attempt", attempt);
+            if (duration != null) {
+                auditMap.put("durationMs", duration.toMillis());
+            }
+
+            if (response != null) {
+                auditMap.put("statusCode", response.intStatusCode());
+                auditMap.put("statusMessage", response.statusMessage() != null ? response.statusMessage().toString() : "");
+
+                Map<String, Object> respHeaders = new LinkedHashMap<>();
+                for (Map.Entry<String, List<String>> entry : response.headers().entrySet()) {
+                    String k = entry.getKey();
+                    List<String> values = entry.getValue();
+                    if (values != null && !values.isEmpty()) {
+                        respHeaders.put(k, values.size() == 1 ? values.get(0) : values);
+                    }
+                }
+                auditMap.put("responseHeaders", respHeaders);
+            }
+
+            if (responseBody != null) {
+                auditMap.put("responseBody", responseBody);
+            }
+
+            if (error != null) {
+                Map<String, Object> errorMap = new LinkedHashMap<>();
+                errorMap.put("type", error.getClass().getName());
+                errorMap.put("message", error.getMessage());
+                auditMap.put("error", errorMap);
+            }
+
+            String tsonRecord = NElementWriter.ofTson().formatPlain(auditMap);
+            List<NPath> auditPaths = resolveTaskAuditPaths(task, session);
+            for (NPath p : auditPaths) {
+                p.mkParentDirs().writeString(tsonRecord + "\n\n", NPathOption.APPEND, NPathOption.CREATE);
+            }
+        } catch (Exception ex) {
+            // Guard against failure in audit logging to never crash the main LLM flow
+            log(NMsg.ofC("Failed to write audit log: %s", ex.getMessage()));
+        }
     }
 
 

@@ -33,31 +33,26 @@ public class NaruModelProtocolMistral extends NaruModelProtocolOpenAICompat {
     }
 
     @Override
-    public NaruResponse chat(NaruModelRequest naruModelRequest, NaruTask task) {
-        // Mistral requires strict role alternation; sanitize before serializing
-        NaruModelRequest sanitizedRequest = sanitizeRequest(naruModelRequest);
-        // Use the inherited robust OpenAI-compatible payload builder
-        NElement body = serializer.serialize(sanitizedRequest, model, task.session());
-        Map<String, NElement> env = sanitizedRequest.env();
-        NWebCli http = NWebCli.of()
-                .connectTimeout(connectTimeout(task, env))
-                .baseUri(url(task, env));
+    protected NaruModelRequest preprocessRequest(NaruModelRequest mrequest, NaruTask task) {
+        NaruModelRequest sanitized = sanitizeRequest(mrequest);
+        return super.preprocessRequest(sanitized, task);
+    }
 
-        // Route calls using the configured bearer token header style
-        NWebRequest request = http.POST(chatPath)
-                .header("Authorization", "Bearer " + apiKey(task))
-                .timeout(readTimeout(task, env))
-                .jsonRequestBody(body);
-
-        String responseString = null;
+    @Override
+    protected void onResponseReceived(NWebResponse response, NaruTask task) {
+        if (task == null || task.session() == null || task.session().meteringService() == null) {
+            return;
+        }
         try {
-            NWebResponse response = request.run().ifErrorThrow();
             Map<String, String> headers = response.firstHeaders();
             Instant serverInstant = Instant.now();
             NDuration retryAfter = null;
             if (headers.containsKey("date")) {
-                ZonedDateTime serverTime = ZonedDateTime.parse(headers.get("Date"), HTTP_DATE);
-                serverInstant = serverTime.toInstant();
+                try {
+                    ZonedDateTime serverTime = ZonedDateTime.parse(headers.get("date"), HTTP_DATE);
+                    serverInstant = serverTime.toInstant();
+                } catch (Exception ignored) {
+                }
             }
             if (headers.get("retry-after") != null) {
                 retryAfter = NLiteral.of(headers.get("retry-after")).asInt().map(NDuration::ofSeconds).orElse(null);
@@ -79,10 +74,8 @@ public class NaruModelProtocolMistral extends NaruModelProtocolOpenAICompat {
 
             providerLastResultInfo.set("ratelimit-tokens-query-cost", tokensQueryCost);
 
-
             providerLastResultInfo.set("ratelimit-limit-req-minute", reqPerMinute);
             providerLastResultInfo.set("ratelimit-remaining-req-minute", remainingReqPerMinute);
-
 
             providerLastResultInfo.set("retry-after", retryAfter == null ? null : retryAfter.toSeconds());
 
@@ -114,20 +107,7 @@ public class NaruModelProtocolMistral extends NaruModelProtocolOpenAICompat {
                     ),
                     task.session()
             );
-            responseString = response.contentAsString();
-            return parseResponse(responseString);
-        } catch (Exception e) {
-            NLog.of(NaruModelProtocolMistral.class)
-                    .log(
-                            NMsg.ofC("Failed to communicate with Mistral at %s: %s\n-----BODY\n%s\n-----BODY\n-----RESPONSE\n%s\n-----RESPONSE",
-                                    request.effectiveUri(), e.getMessage(), e,
-                                    NElementWriter.ofJson().formatPlain(body),
-                                    responseString
-                            ).asError()
-                    );
-            throw new NIllegalArgumentException(
-                    NMsg.ofC("Failed to communicate with Mistral at %s: %s", request.effectiveUri(), e.getMessage(), e)
-            );
+        } catch (Exception ignored) {
         }
     }
 

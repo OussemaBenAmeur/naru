@@ -6,6 +6,7 @@ import net.thevpc.naru.api.model.*;
 import net.thevpc.naru.api.registry.NaruToolParameter;
 import net.thevpc.nuts.elem.NArrayElementBuilder;
 import net.thevpc.nuts.elem.NElement;
+import net.thevpc.nuts.elem.NElementWriter;
 import net.thevpc.nuts.elem.NObjectElementBuilder;
 
 import java.util.*;
@@ -58,7 +59,7 @@ public class NaruOpenApiRequestSerializer implements NaruModelRequestSerializer 
     private NElement toOpenAiToolDefinition(NaruToolDefinitionFunction fct) {
         NObjectElementBuilder functionBlock = NElement.ofObjectBuilder();
         functionBlock.set("name", fct.getName());
-        functionBlock.set("description", fct.getDescription());
+        functionBlock.set("description", fct.getDescription() != null ? fct.getDescription() : "");
 
         NObjectElementBuilder paramsObj = NElement.ofObjectBuilder();
         paramsObj.set("type", "object");
@@ -68,10 +69,7 @@ public class NaruOpenApiRequestSerializer implements NaruModelRequestSerializer 
 
         if (fct.getParams() != null) {
             for (NaruToolParameter p : fct.getParams()) {
-                NObjectElementBuilder paramSchema = NElement.ofObjectBuilder();
-                paramSchema.set("type", p.getType().name().toLowerCase());
-                paramSchema.set("description", p.getDescription());
-                propertiesObj.set(p.getName(), paramSchema.build());
+                propertiesObj.set(p.getName(), paramToSchema(p));
 
                 if (p.isRequired()) {
                     requiredArr.add(NElement.ofString(p.getName()));
@@ -90,6 +88,49 @@ public class NaruOpenApiRequestSerializer implements NaruModelRequestSerializer 
                 .set("type", "function")
                 .set("function", functionBlock.build())
                 .build();
+    }
+
+    public static NElement paramToSchema(NaruToolParameter p) {
+        NObjectElementBuilder paramSchema = NElement.ofObjectBuilder();
+        paramSchema.set("type", p.getType() != null ? p.getType().name().toLowerCase() : "string");
+        if (p.getDescription() != null) {
+            paramSchema.set("description", p.getDescription());
+        }
+        if (p.getDefaultValue() != null) {
+            paramSchema.set("default", NElement.of(p.getDefaultValue()));
+        }
+        if (p.getEnumValues() != null && !p.getEnumValues().isEmpty()) {
+            NArrayElementBuilder enumArr = NElement.ofArrayBuilder();
+            for (Object val : p.getEnumValues()) {
+                enumArr.add(NElement.of(val));
+            }
+            paramSchema.set("enum", enumArr.build());
+        }
+        if (p.getType() == NaruToolParameter.Type.ARRAY) {
+            if (p.getItemType() != null) {
+                paramSchema.set("items", paramToSchema(p.getItemType()));
+            } else {
+                NObjectElementBuilder itemSchema = NElement.ofObjectBuilder();
+                itemSchema.set("type", "string");
+                paramSchema.set("items", itemSchema.build());
+            }
+        } else if (p.getType() == NaruToolParameter.Type.OBJECT) {
+            NObjectElementBuilder nestedProps = NElement.ofObjectBuilder();
+            NArrayElementBuilder nestedReq = NElement.ofArrayBuilder();
+            if (p.getProperties() != null) {
+                for (NaruToolParameter np : p.getProperties()) {
+                    nestedProps.set(np.getName(), paramToSchema(np));
+                    if (np.isRequired()) {
+                        nestedReq.add(NElement.ofString(np.getName()));
+                    }
+                }
+            }
+            paramSchema.set("properties", nestedProps.build());
+            if (!nestedReq.children().isEmpty()) {
+                paramSchema.set("required", nestedReq.build());
+            }
+        }
+        return paramSchema.build();
     }
 
     private NElement messageToElement(NaruMessage m) {
@@ -121,8 +162,10 @@ public class NaruOpenApiRequestSerializer implements NaruModelRequestSerializer 
 
                 if (tc.getArguments() != null) {
                     // FIXED: OpenAI strictly mandates that arguments are passed as a JSON-escaped string
-                    String jsonStringArgs = NElement.of(tc.getArguments()).toString();
+                    String jsonStringArgs = NElementWriter.ofJson().formatPlain(NElement.of(tc.getArguments()));
                     fn.set("arguments", NElement.ofString(jsonStringArgs));
+                } else {
+                    fn.set("arguments", NElement.ofString("{}"));
                 }
 
                 call.set("function", fn.build());

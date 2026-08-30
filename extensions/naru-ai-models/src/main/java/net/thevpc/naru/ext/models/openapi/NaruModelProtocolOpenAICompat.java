@@ -54,42 +54,11 @@ public class NaruModelProtocolOpenAICompat extends NaruModelProtocolBase {
                 .flatMap(x -> x.asStringValue()).orNull();
     }
 
+    @Override
     protected void prepareRequest(NWebRequest request, NElement body, NaruTask task) {
         String apiKey = apiKey(task);
         if (!NBlankable.isBlank(apiKey)) {
             request.header("Authorization", "Bearer " + apiKey);
         }
     }
-
-    @Override
-    public NaruResponse chat(NaruModelRequest naruModelRequest, NaruTask task) {
-        NElement body = serializer.serialize(naruModelRequest, model, task.session());
-        Map<String, NElement> env = naruModelRequest.env();
-        NWebCli http = NWebCli.of()
-                .connectTimeout(connectTimeout(task, env))
-                .baseUri(url(task, env));
-        NWebRequest request = http.POST(chatPath)
-                .timeout(readTimeout(task, env))
-                .jsonRequestBody(body);
-        prepareRequest(request, body, task);
-
-        String responseString = null;
-        try {
-            NWebResponse response = request.run().ifErrorThrow();
-            responseString = response.contentAsString();
-            return parseResponse(responseString);
-        } catch (Exception e) {
-            NLog.of(getClass())
-                    .log(
-                            NMsg.ofC("Failed to communicate with %s at %s: %s\n-----BODY\n%s\n-----BODY\n-----RESPONSE\n%s\n-----RESPONSE", provider().name(), request.effectiveUri(), e.getMessage(), e,
-                                    NElementWriter.ofJson().formatPlain(body),
-                                    responseString
-                            ).asError()
-                    );
-            throw new NIllegalArgumentException(
-                    NMsg.ofC("Failed to communicate with %s at %s: %s", provider().name(), request.effectiveUri(), e.getMessage(), e)
-            );
-        }
-    }
-
 }

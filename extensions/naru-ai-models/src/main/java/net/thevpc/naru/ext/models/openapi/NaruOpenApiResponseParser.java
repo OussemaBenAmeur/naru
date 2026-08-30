@@ -104,28 +104,7 @@ public class NaruOpenApiResponseParser implements NElementDeserializer<NaruRespo
 
                         Map<String, Object> args = new LinkedHashMap<>();
                         if (fn.get("arguments").isPresent()) {
-                            NElement argsEl = fn.get("arguments").get();
-                            if (argsEl.isAnyObject()) {
-                                // Safe fallback mapping loop over NObjectElement entries instead of abstract Map.class unmarshalling
-                                for (NPairElement entry : argsEl.asObject().get().namedPairs()) {
-                                    String k = entry.key().asStringValue().orNull();
-                                    if (!NBlankable.isBlank(k)) {
-                                        args.put(k, NElement.simpleOf(entry.value()));
-                                    }
-                                }
-                            } else if (argsEl.isPrimitive()) {
-                                // Safely handle raw escaped JSON argument string blocks
-                                String argsStr = argsEl.asStringValue().get();
-                                try {
-                                    // Direct string-to-map conversion using plain json engine
-                                    Map<?, ?> readMap = NElementReader.ofJson().read(argsStr, Map.class);
-                                    for (Map.Entry<?, ?> entry : readMap.entrySet()) {
-                                        args.put(String.valueOf(entry.getKey()), entry.getValue());
-                                    }
-                                } catch (Exception ignored) {
-                                    args.put("raw", argsStr);
-                                }
-                            }
+                            args = parseArguments(fn.get("arguments").get());
                         }
                         calls.add(new NaruToolCall(id, name, args));
                     }
@@ -133,17 +112,8 @@ public class NaruOpenApiResponseParser implements NElementDeserializer<NaruRespo
 
                 response.setMessage(NaruMessage.assistantWithToolCalls(content, calls).setThinking(thinking));
             } else {
-                // 4. Content Text Fallback processing (e.g., XML-like tool formats if applicable)
-                if (content.startsWith("<function=")) {
-                    NaruToolCall a = NaruModelProtocolBase.parseXmlLikeToolCall(content);
-                    if (a != null) {
-                        List<NaruToolCall> calls = new ArrayList<>();
-                        calls.add(a);
-                        response.setMessage(NaruMessage.assistantWithToolCalls(content, calls));
-                        return response;
-                    }
-                }
-                // 5. Inline <think>...</think> blocks (DeepSeek/Ollama style)
+                // 4. Inline <think>...</think> blocks (DeepSeek/Ollama style)
+                String cleanedContent = content;
                 if (content != null && content.contains("<think>")) {
                     java.util.regex.Matcher m = java.util.regex.Pattern.compile(
                             "<think>(.*?)</think>", java.util.regex.Pattern.DOTALL).matcher(content);
@@ -154,16 +124,148 @@ public class NaruOpenApiResponseParser implements NElementDeserializer<NaruRespo
                         }
                         inlineThinking.append(m.group(1).trim());
                     }
-                    String cleaned = content.replaceAll("(?s)<think>.*?</think>", "").trim();
+                    cleanedContent = content.replaceAll("(?s)<think>.*?</think>", "").trim();
                     if (thinking == null && inlineThinking.length() > 0) {
                         thinking = inlineThinking.toString();
                     }
-                    response.setMessage(NaruMessage.assistant(cleaned).setThinking(thinking));
+                }
+
+                // 5. Fallback check for embedded tool calls (XML / <tool_call> / <|tool_call|>)
+                List<NaruToolCall> embeddedCalls = parseEmbeddedToolCalls(cleanedContent);
+                if (!embeddedCalls.isEmpty()) {
+                    response.setMessage(NaruMessage.assistantWithToolCalls(cleanedContent, embeddedCalls).setThinking(thinking));
                     return response;
                 }
-                response.setMessage(NaruMessage.assistant(content).setThinking(thinking));
+
+                response.setMessage(NaruMessage.assistant(cleanedContent != null ? cleanedContent : "").setThinking(thinking));
             }
         }
         return response;
+    }
+
+    public static Map<String, Object> parseArguments(NElement argsEl) {
+        Map<String, Object> args = new LinkedHashMap<>();
+        if (argsEl == null || argsEl.isNull() || argsEl.isEmpty()) {
+            return args;
+        }
+        if (argsEl.isAnyObject()) {
+            for (NPairElement entry : argsEl.asObject().get().namedPairs()) {
+                String k = entry.key().asStringValue().orNull();
+                if (!NBlankable.isBlank(k)) {
+                    NElement val = entry.value();
+                    if (val != null) {
+                        if (val.isPrimitive()) {
+                            args.put(k, val.asPrimitive().get().value());
+                        } else {
+                            args.put(k, NElement.simpleOf(val));
+                        }
+                    }
+                }
+            }
+            return args;
+        }
+        if (argsEl.isPrimitive()) {
+            String argsStr = argsEl.asStringValue().orElse("").trim();
+            if (argsStr.isEmpty() || "{}".equals(argsStr)) {
+                return args;
+            }
+            // Strip markdown code block wrappers if present (e.g. ```json ... ```)
+            if (argsStr.startsWith("```")) {
+                int firstNewline = argsStr.indexOf('\n');
+                int lastBacktick = argsStr.lastIndexOf("```");
+                if (firstNewline != -1 && lastBacktick > firstNewline) {
+                    argsStr = argsStr.substring(firstNewline + 1, lastBacktick).trim();
+                }
+            }
+            try {
+                Map<?, ?> readMap = NElementReader.ofJson().read(argsStr, Map.class);
+                if (readMap != null) {
+                    for (Map.Entry<?, ?> entry : readMap.entrySet()) {
+                        args.put(String.valueOf(entry.getKey()), entry.getValue());
+                    }
+                }
+            } catch (Exception e1) {
+                try {
+                    // Try reading as TSON
+                    NElement tsonEl = NElementReader.ofTson().read(argsStr);
+                    if (tsonEl != null && tsonEl.isAnyObject()) {
+                        for (NPairElement entry : tsonEl.asObject().get().namedPairs()) {
+                            String k = entry.key().asStringValue().orNull();
+                            if (!NBlankable.isBlank(k)) {
+                                NElement val = entry.value();
+                                if (val != null) {
+                                    if (val.isPrimitive()) {
+                                        args.put(k, val.asPrimitive().get().value());
+                                    } else {
+                                        args.put(k, NElement.simpleOf(val));
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        args.put("raw", argsStr);
+                    }
+                } catch (Exception e2) {
+                    args.put("raw", argsStr);
+                }
+            }
+        }
+        return args;
+    }
+
+    public static List<NaruToolCall> parseEmbeddedToolCalls(String content) {
+        if (content == null || content.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<NaruToolCall> calls = new ArrayList<>();
+
+        // 1. Check for <function=name><parameter=key>value</parameter>...</function>
+        if (content.contains("<function=")) {
+            java.util.regex.Matcher funcMatcher = java.util.regex.Pattern.compile("<function=([^>]+)>(.*?)(</function>|$)", java.util.regex.Pattern.DOTALL).matcher(content);
+            if (content.contains("</function>")) {
+                funcMatcher = java.util.regex.Pattern.compile("<function=([^>]+)>(.*?)</function>", java.util.regex.Pattern.DOTALL).matcher(content);
+            }
+            while (funcMatcher.find()) {
+                String funcName = funcMatcher.group(1).trim();
+                String body = funcMatcher.group(2);
+                Map<String, Object> arguments = new LinkedHashMap<>();
+                java.util.regex.Matcher paramMatcher = java.util.regex.Pattern.compile("<parameter=([^>]+)>(.*?)</parameter>", java.util.regex.Pattern.DOTALL).matcher(body);
+                while (paramMatcher.find()) {
+                    arguments.put(paramMatcher.group(1).trim(), paramMatcher.group(2).trim());
+                }
+                calls.add(new NaruToolCall(UUID.randomUUID().toString(), funcName, arguments));
+            }
+            if (!calls.isEmpty()) {
+                return calls;
+            }
+        }
+
+        // 2. Check for <tool_call>{"name": "...", "arguments": {...}}</tool_call> or <|tool_call|>...<|end_tool_call|>
+        java.util.regex.Pattern[] patterns = new java.util.regex.Pattern[]{
+                java.util.regex.Pattern.compile("<\\|tool_call\\|>(.*?)<\\|end_tool_call\\|>", java.util.regex.Pattern.DOTALL),
+                java.util.regex.Pattern.compile("<tool_call>(.*?)</tool_call>", java.util.regex.Pattern.DOTALL)
+        };
+        for (java.util.regex.Pattern pattern : patterns) {
+            java.util.regex.Matcher m = pattern.matcher(content);
+            while (m.find()) {
+                String json = m.group(1).trim();
+                try {
+                    NElement el = NElementReader.ofJson().read(json);
+                    if (el.isAnyObject()) {
+                        NObjectElement obj = el.asObject().get();
+                        String name = obj.getStringValue("name").orElse(obj.getStringValue("tool").orElse("unknown"));
+                        NElement argsEl = obj.get("arguments").orElse(obj.get("args").orNull());
+                        Map<String, Object> args = parseArguments(argsEl);
+                        calls.add(new NaruToolCall("call_" + UUID.randomUUID().toString().substring(0, 8), name, args));
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+            if (!calls.isEmpty()) {
+                return calls;
+            }
+        }
+
+        return calls;
     }
 }

@@ -12,6 +12,7 @@ import net.thevpc.nuts.mon.NChronometer;
 import net.thevpc.nuts.time.NDuration;
 import net.thevpc.nuts.util.NBlankable;
 import net.thevpc.nuts.util.NIllegalArgumentException;
+import net.thevpc.nuts.util.NOptional;
 
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -110,40 +111,190 @@ public class NaruModelProtocolBase implements NaruModelProtocol {
                 .orElse(NDuration.ofSeconds(120));
     }
 
-    @Override
-    public NaruResponse chat(NaruModelRequest mrequest, NaruTask task) {
-        Map<String, NElement> env = mrequest.env();
-        boolean toolsWrapped = false;
+    protected NaruModelRequest preprocessRequest(NaruModelRequest mrequest, NaruTask task) {
         boolean emulate_tool_calls = false;
         if (mrequest.env().get("emulate_tool_calls") != null && mrequest.env().get("emulate_tool_calls").isBoolean()) {
             emulate_tool_calls = mrequest.env().get("emulate_tool_calls").asBooleanValue().get();
         }
         if (!capabilities.isTools() && !mrequest.tools().isEmpty() || emulate_tool_calls) {
             mrequest = NoTollWrapHelper.wrapRequest(mrequest, NoTollWrapHelper.TOOL_CALL_SEP, NoTollWrapHelper.TOOL_RESULT_SEP);
-            toolsWrapped = true;
         }
-        NElement body = serializer.serialize(mrequest, model, task.session());
+        return mrequest;
+    }
+
+    protected void prepareRequest(NWebRequest request, NElement body, NaruTask task) {
+        // Subclasses can inject headers, auth, etc.
+    }
+
+    protected void onResponseReceived(NWebResponse response, NaruTask task) {
+        // Subclasses can inspect headers, track telemetry, etc.
+    }
+
+    protected int maxRetries(NaruTask task, Map<String, NElement> env) {
+        if (task != null && task.session() != null) {
+            NOptional<NElement> opt = task.session().agent().env().get(configPrefix + ".maxRetries");
+            if (opt.isPresent()) {
+                return opt.get().asIntValue().orElse(5);
+            }
+            opt = task.session().agent().env().get("model.maxRetries");
+            if (opt.isPresent()) {
+                return opt.get().asIntValue().orElse(5);
+            }
+        }
+        return 5;
+    }
+
+    protected NDuration retryPeriod(NaruTask task, Map<String, NElement> env) {
+        if (task != null && task.session() != null) {
+            NOptional<NElement> opt = task.session().agent().env().get(configPrefix + ".retryPeriod");
+            if (opt.isPresent()) {
+                return opt.get().asStringValue().flatMap(NDuration::of).orElse(NDuration.ofSeconds(2));
+            }
+            opt = task.session().agent().env().get("model.retryPeriod");
+            if (opt.isPresent()) {
+                return opt.get().asStringValue().flatMap(NDuration::of).orElse(NDuration.ofSeconds(2));
+            }
+        }
+        return NDuration.ofSeconds(2);
+    }
+
+    public static class NonRetryableWebException extends Error {
+        private final String responseString;
+
+        public NonRetryableWebException(Throwable cause, String responseString) {
+            super(cause);
+            this.responseString = responseString;
+        }
+
+        public String getResponseString() {
+            return responseString;
+        }
+    }
+
+    @Override
+    public NaruResponse chat(NaruModelRequest mrequest, NaruTask task) {
+        Map<String, NElement> env = mrequest.env();
+        boolean toolsWrapped = (!capabilities.isTools() && !mrequest.tools().isEmpty());
+        boolean emulate_tool_calls = mrequest.env().get("emulate_tool_calls") != null
+                && mrequest.env().get("emulate_tool_calls").isBoolean()
+                && mrequest.env().get("emulate_tool_calls").asBooleanValue().get();
+
+        NaruModelRequest preparedModelRequest = preprocessRequest(mrequest, task);
+        NElement body = serializer.serialize(preparedModelRequest, model, task.session());
         NWebCli http = NWebCli.of()
                 .connectTimeout(connectTimeout(task, env))
                 .baseUri(url(task, env));
         NWebRequest request = http.POST(chatPath)
                 .timeout(readTimeout(task, env))
                 .jsonRequestBody(body);
+        prepareRequest(request, body, task);
+
+        int maxRetries = maxRetries(task, env);
+        NDuration baseDelay = retryPeriod(task, env);
+        java.util.concurrent.atomic.AtomicReference<NDuration> dynamicRetryAfter = new java.util.concurrent.atomic.AtomicReference<>();
+        java.util.concurrent.atomic.AtomicInteger attemptCounter = new java.util.concurrent.atomic.AtomicInteger(0);
+
+        net.thevpc.nuts.concurrent.NRetryCall<NaruResponse> retryCall = net.thevpc.nuts.concurrent.NRetryCall.of("llm-" + provider().name(), () -> {
+            int attempt = attemptCounter.incrementAndGet();
+            NChronometer chrono = NChronometer.of();
+            java.time.Instant reqTime = java.time.Instant.now();
+            NWebResponse response = null;
+            String responseString = null;
+            Throwable error = null;
+            try {
+                NaruModelUtils.logWebRequest(request, NMsg.ofC("chat with %s (attempt %s)", model, attempt), body);
+                response = request.run();
+                int code = response.intStatusCode();
+
+                if (code == 429) {
+                    NDuration retryAfter = NaruModelUtils.parseRetryAfter(response);
+                    if (retryAfter != null) {
+                        dynamicRetryAfter.set(retryAfter);
+                    }
+                    responseString = response.contentAsString();
+                    throw new net.thevpc.nuts.net.NWebResponseException(
+                            NMsg.ofC("Rate limit exceeded (HTTP 429) from %s: %s", provider().name(), response.statusMessage()),
+                            null,
+                            response.statusCode()
+                    );
+                } else if (response.isClientError()) {
+                    // Fatal 4xx error (e.g. 400, 401, 403, 404) -> Do not retry
+                    responseString = response.contentAsString();
+                    throw new NonRetryableWebException(new net.thevpc.nuts.net.NWebResponseException(
+                            NMsg.ofC("Client error (HTTP %s) from %s: %s", code, provider().name(), response.statusMessage()),
+                            null,
+                            response.statusCode()
+                    ), responseString);
+                } else if (response.isError()) {
+                    // 5xx error or other error -> if 502/503/504 retryable, else retryable up to maxRetries
+                    NDuration retryAfter = NaruModelUtils.parseRetryAfter(response);
+                    if (retryAfter != null) {
+                        dynamicRetryAfter.set(retryAfter);
+                    }
+                    responseString = response.contentAsString();
+                    response.ifErrorThrow();
+                }
+
+                responseString = response.contentAsString();
+                onResponseReceived(response, task);
+                NElement responseElement = null;
+                try {
+                    responseElement = NElementReader.ofJson().read(responseString);
+                } catch (Exception ignored) {
+                }
+                NaruModelUtils.logWebResponse(request, NMsg.ofC("chat with %s (attempt %s)", model, attempt), body, responseElement != null ? responseElement : responseString, chrono);
+                NaruResponse naruResponse = parseResponse(responseString);
+                if (toolsWrapped || emulate_tool_calls) {
+                    naruResponse = NoTollWrapHelper.unwrapResponse(naruResponse, NoTollWrapHelper.TOOL_CALL_SEP, task);
+                }
+                return naruResponse;
+            } catch (Throwable t) {
+                error = t instanceof NonRetryableWebException ? ((NonRetryableWebException) t).getCause() : t;
+                throw t;
+            } finally {
+                NaruModelUtils.logAudit(
+                        task,
+                        task != null ? task.session() : null,
+                        provider().name(),
+                        model.model(),
+                        request,
+                        body,
+                        response,
+                        responseString,
+                        error,
+                        attempt,
+                        chrono.duration(),
+                        reqTime
+                );
+            }
+        });
+
+        retryCall.maxRetries(maxRetries)
+                .retryPeriod(attempt -> {
+                    NDuration custom = dynamicRetryAfter.getAndSet(null);
+                    if (custom != null && !custom.isZero()) {
+                        return custom;
+                    }
+                    // Exponential backoff: baseDelay * 2^(attempt - 1)
+                    return baseDelay.mul(Math.pow(2.0, Math.max(0, attempt - 1)));
+                });
 
         try {
-            NChronometer chrono = NChronometer.of();
-            NaruModelUtils.logWebRequest(request, NMsg.ofC("chat with %s", model), body);
-            NWebResponse response = request.run().ifErrorThrow();
-            String responseString = response.contentAsString();
-            NElement responseElement = NElementReader.ofJson().read(responseString);
-            NaruModelUtils.logWebResponse(request, NMsg.ofC("chat with %s", model), body, responseElement, chrono);
-            NaruResponse naruResponse = parseResponse(responseString);
-            if (toolsWrapped || emulate_tool_calls) {
-                naruResponse = NoTollWrapHelper.unwrapResponse(naruResponse, NoTollWrapHelper.TOOL_CALL_SEP, task);
-            }
-            return naruResponse;
+            return retryCall.call();
+        } catch (NonRetryableWebException nre) {
+            Throwable cause = nre.getCause();
+            net.thevpc.nuts.log.NLog.of(getClass()).log(NMsg.ofC("Failed to communicate with %s at %s: %s\n-----BODY\n%s\n-----BODY\n-----RESPONSE\n%s\n-----RESPONSE",
+                    provider().name(), request.effectiveUri(), cause.getMessage(),
+                    NElementWriter.ofTson().formatPlain(body),
+                    nre.getResponseString()
+            ).asError());
+            throw new NIllegalArgumentException(NMsg.ofC("Failed to communicate with %s at %s: %s", provider().name(), request.effectiveUri(), cause.getMessage(), cause));
         } catch (Exception e) {
-            throw new NIllegalArgumentException(NMsg.ofC("Failed to communicate with Ollama at %s: %s", request.effectiveUri(), e.getMessage(), e));
+            net.thevpc.nuts.log.NLog.of(getClass()).log(NMsg.ofC("Failed to communicate with %s at %s: %s\n-----BODY\n%s\n-----BODY",
+                    provider().name(), request.effectiveUri(), e.getMessage(),
+                    NElementWriter.ofTson().formatPlain(body)
+            ).asError());
+            throw new NIllegalArgumentException(NMsg.ofC("Failed to communicate with %s at %s: %s", provider().name(), request.effectiveUri(), e.getMessage(), e));
         }
     }
 
